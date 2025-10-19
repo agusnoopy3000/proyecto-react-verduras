@@ -35,6 +35,23 @@ export default function Login() {
 
   return (
     <>
+      <header className="site">
+        <div className="container nav">
+          <div className="brand">
+            <div className="logo" aria-hidden="true"></div>
+            <Link to="/">HuertoHogar</Link>
+          </div>
+          <nav className="navbar navbar-expand-lg">
+            <ul className="navbar-nav me-auto mb-2 mb-lg-0">
+              <li className="nav-item"><Link className="nav-link" to="/">Inicio</Link></li>
+              <li className="nav-item"><Link className="nav-link" to="/catalogo">Catálogo</Link></li>
+              <li className="nav-item"><Link className="nav-link" to="/carrito">Carrito</Link></li>
+              <li className="nav-item"><Link className="nav-link" to="/pedido">Pedido</Link></li>
+            </ul>
+          </nav>
+        </div>
+      </header>
+
       <main className="container">
         <section className="form">
           <h2>Ingresar</h2>

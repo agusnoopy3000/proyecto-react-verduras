@@ -24,6 +24,29 @@ export default function Blog() {
         }
       `}</style>
 
+      <header className="site">
+        <div className="container nav">
+          <div className="brand">
+            <img src="/assets/img/huerto_hogar.jpeg" alt="Logo HuertoHogar" style={{width:36,height:36,objectFit:'cover',borderRadius:8,marginRight:8}} />
+            <a href="/">HuertoHogar</a>
+          </div>
+          <nav className="navbar navbar-expand-lg">
+            <ul className="navbar-nav me-auto mb-2 mb-lg-0">
+              <li className="nav-item"><a className="nav-link" href="/">Inicio</a></li>
+              <li className="nav-item"><a className="nav-link" href="/catalogo">Catálogo</a></li>
+              <li className="nav-item"><a className="nav-link" href="/carrito">Carrito</a></li>
+              <li className="nav-item"><a className="nav-link" href="/pedido">Pedido</a></li>
+              <li className="nav-item"><a className="nav-link" href="/nosotros">Nosotros</a></li>
+              <li className="nav-item"><a className="nav-link" href="/blog">Blog</a></li>
+              <li className="nav-item"><a className="nav-link" href="/contacto">Contacto</a></li>
+              <li className="nav-item"><a className="nav-link" href="/login">Ingresar</a></li>
+              <li className="nav-item"><a className="nav-link" href="/registro">Registro</a></li>
+              <li className="nav-item"><a className="nav-link" href="/perfil">Perfil</a></li>
+            </ul>
+          </nav>
+        </div>
+      </header>
+
       <main className="container">
         <section className="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-3">
           <article className="card shadow-sm p-3">

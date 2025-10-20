@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { toast } from 'react-toastify';
 import productosDefault from "../data/productos";
 
 export default function Admin() {
@@ -91,8 +92,10 @@ export default function Admin() {
     if (editingUserIdx === null) {
       // add
       copy.push({ ...userForm });
+      toast.success('Usuario añadido');
     } else {
       copy[editingUserIdx] = { ...userForm };
+      toast.success('Usuario modificado');
     }
     saveUsers(copy);
     setShowUserModal(false);
@@ -124,8 +127,10 @@ export default function Admin() {
     const copy = [...products];
     if (editingProdIdx === null) {
       copy.push({ ...prodForm });
+      toast.success('Producto añadido');
     } else {
       copy[editingProdIdx] = { ...prodForm };
+      toast.success('Producto modificado');
     }
     saveProducts(copy);
     setShowProdModal(false);
@@ -205,136 +210,174 @@ export default function Admin() {
         )}
       </div>
 
-      {/* User Modal */}
+      {/* User Modal (replaced) */}
       {showUserModal && (
-        <div className="modal-backdrop" style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.45)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:1100}}>
-          <div className="modal-dialog" style={{maxWidth:720, width:'95%'}}>
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">{editingUserIdx === null ? "Nuevo Usuario" : "Editar Usuario"}</h5>
-                <button type="button" className="btn-close" aria-label="Cerrar" onClick={() => setShowUserModal(false)} />
+        <div
+          className="modal-backdrop"
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1100 }}
+          onClick={(e) => { if (e.target === e.currentTarget) setShowUserModal(false); }}
+        >
+          <div
+            style={{
+              maxWidth: 720,
+              width: '94%',
+              margin: '6vh auto',
+              background: '#fff',
+              borderRadius: 10,
+              boxShadow: '0 12px 30px rgba(0,0,0,0.25)',
+              display: 'flex',
+              flexDirection: 'column',
+              maxHeight: '80vh',
+              overflow: 'hidden'
+            }}
+            role="dialog"
+            aria-modal="true"
+            aria-label={editingUserIdx === null ? "Nuevo Usuario" : "Editar Usuario"}
+          >
+            <div style={{ padding: 12, borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h5 style={{ margin: 0, fontSize: 16 }}>{editingUserIdx === null ? "Nuevo Usuario" : "Editar Usuario"}</h5>
+              <button className="btn btn-sm btn-light" onClick={() => setShowUserModal(false)}>Cerrar</button>
+            </div>
+
+            <form
+              onSubmit={(e) => { e.preventDefault(); saveUser(); }}
+              style={{ padding: 14, overflowY: 'auto', flex: 1 }}
+            >
+              <div className="row g-3">
+                <div className="col-12 col-md-4">
+                  <label className="form-label">RUN *</label>
+                  <input className="form-control" value={userForm.run} onChange={e => onUserChange('run', e.target.value)} />
+                </div>
+                <div className="col-12 col-md-4">
+                  <label className="form-label">Nombre *</label>
+                  <input className="form-control" value={userForm.nombre} onChange={e => onUserChange('nombre', e.target.value)} />
+                </div>
+                <div className="col-12 col-md-4">
+                  <label className="form-label">Apellidos *</label>
+                  <input className="form-control" value={userForm.apellidos} onChange={e => onUserChange('apellidos', e.target.value)} />
+                </div>
+
+                <div className="col-12 col-md-6">
+                  <label className="form-label">Correo *</label>
+                  <input className="form-control" type="email" value={userForm.email} onChange={e => onUserChange('email', e.target.value)} />
+                </div>
+                <div className="col-12 col-md-6">
+                  <label className="form-label">Tipo de Usuario *</label>
+                  <select className="form-select" value={userForm.tipo} onChange={e => onUserChange('tipo', e.target.value)}>
+                    <option>Administrador</option>
+                    <option>Cliente</option>
+                    <option>Vendedor</option>
+                  </select>
+                </div>
+
+                <div className="col-12 col-md-6">
+                  <label className="form-label">Región</label>
+                  <input className="form-control" value={userForm.region} onChange={e => onUserChange('region', e.target.value)} />
+                </div>
+                <div className="col-12 col-md-6">
+                  <label className="form-label">Comuna</label>
+                  <input className="form-control" value={userForm.comuna} onChange={e => onUserChange('comuna', e.target.value)} />
+                </div>
+
+                <div className="col-12">
+                  <label className="form-label">Dirección</label>
+                  <input className="form-control" value={userForm.direccion} onChange={e => onUserChange('direccion', e.target.value)} />
+                </div>
+
+                <div className="col-12 col-md-6">
+                  <label className="form-label">Fecha Nacimiento</label>
+                  <input className="form-control" type="date" value={userForm.fechaNac} onChange={e => onUserChange('fechaNac', e.target.value)} />
+                </div>
+
+                {msg && <div className="col-12"><div className="text-danger">{msg}</div></div>}
               </div>
+            </form>
 
-              <div className="modal-body" style={{maxHeight:'65vh', overflowY:'auto', paddingTop:8, paddingBottom:8}}>
-                <form onSubmit={(e)=>{ e.preventDefault(); saveUser(); }}>
-                  <div className="row g-2">
-                    <div className="col-12 col-md-4">
-                      <label className="form-label">RUN *</label>
-                      <input className="form-control" value={userForm.run} onChange={e=>onUserChange('run', e.target.value)} />
-                    </div>
-                    <div className="col-12 col-md-4">
-                      <label className="form-label">Nombre *</label>
-                      <input className="form-control" value={userForm.nombre} onChange={e=>onUserChange('nombre', e.target.value)} />
-                    </div>
-                    <div className="col-12 col-md-4">
-                      <label className="form-label">Apellidos *</label>
-                      <input className="form-control" value={userForm.apellidos} onChange={e=>onUserChange('apellidos', e.target.value)} />
-                    </div>
-
-                    <div className="col-12 col-md-6">
-                      <label className="form-label">Correo *</label>
-                      <input className="form-control" type="email" value={userForm.email} onChange={e=>onUserChange('email', e.target.value)} />
-                    </div>
-                    <div className="col-12 col-md-6">
-                      <label className="form-label">Tipo de Usuario *</label>
-                      <select className="form-select" value={userForm.tipo} onChange={e=>onUserChange('tipo', e.target.value)}>
-                        <option>Administrador</option>
-                        <option>Cliente</option>
-                        <option>Vendedor</option>
-                      </select>
-                    </div>
-
-                    <div className="col-12 col-md-6">
-                      <label className="form-label">Región</label>
-                      <input className="form-control" value={userForm.region} onChange={e=>onUserChange('region', e.target.value)} />
-                    </div>
-                    <div className="col-12 col-md-6">
-                      <label className="form-label">Comuna</label>
-                      <input className="form-control" value={userForm.comuna} onChange={e=>onUserChange('comuna', e.target.value)} />
-                    </div>
-
-                    <div className="col-12">
-                      <label className="form-label">Dirección</label>
-                      <input className="form-control" value={userForm.direccion} onChange={e=>onUserChange('direccion', e.target.value)} />
-                    </div>
-
-                    <div className="col-12 col-md-6">
-                      <label className="form-label">Fecha Nacimiento</label>
-                      <input className="form-control" type="date" value={userForm.fechaNac} onChange={e=>onUserChange('fechaNac', e.target.value)} />
-                    </div>
-
-                    {msg && <div className="col-12"><div className="text-danger">{msg}</div></div>}
-                  </div>
-                </form>
-              </div>
-
-              <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={() => setShowUserModal(false)}>Cancelar</button>
-                <button type="button" className="btn btn-success" onClick={saveUser}>Guardar</button>
-              </div>
+            <div style={{ padding: 12, borderTop: '1px solid #eee', display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+              <button type="button" className="btn btn-secondary" onClick={() => setShowUserModal(false)}>Cancelar</button>
+              <button type="button" className="btn btn-success" onClick={saveUser}>Guardar</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Product Modal */}
+      {/* Product Modal (replaced) */}
       {showProdModal && (
-        <div className="modal-backdrop" style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.45)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:1100}}>
-          <div className="modal-dialog" style={{maxWidth:720, width:'95%'}}>
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">{editingProdIdx === null ? "Nuevo Producto" : "Editar Producto"}</h5>
-                <button type="button" className="btn-close" aria-label="Cerrar" onClick={() => setShowProdModal(false)} />
+        <div
+          className="modal-backdrop"
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1100 }}
+          onClick={(e) => { if (e.target === e.currentTarget) setShowProdModal(false); }}
+        >
+          <div
+            style={{
+              maxWidth: 720,
+              width: '94%',
+              margin: '6vh auto',
+              background: '#fff',
+              borderRadius: 10,
+              boxShadow: '0 12px 30px rgba(0,0,0,0.25)',
+              display: 'flex',
+              flexDirection: 'column',
+              maxHeight: '80vh',
+              overflow: 'hidden'
+            }}
+            role="dialog"
+            aria-modal="true"
+            aria-label={editingProdIdx === null ? "Nuevo Producto" : "Editar Producto"}
+          >
+            <div style={{ padding: 12, borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h5 style={{ margin: 0, fontSize: 16 }}>{editingProdIdx === null ? "Nuevo Producto" : "Editar Producto"}</h5>
+              <button className="btn btn-sm btn-light" onClick={() => setShowProdModal(false)}>Cerrar</button>
+            </div>
+
+            <form
+              onSubmit={(e) => { e.preventDefault(); saveProd(); }}
+              style={{ padding: 14, overflowY: 'auto', flex: 1 }}
+            >
+              <div className="row g-3">
+                <div className="col-12 col-md-4">
+                  <label className="form-label">Código *</label>
+                  <input className="form-control" value={prodForm.codigo} onChange={e => onProdChange('codigo', e.target.value)} />
+                </div>
+                <div className="col-12 col-md-8">
+                  <label className="form-label">Nombre *</label>
+                  <input className="form-control" value={prodForm.nombre} onChange={e => onProdChange('nombre', e.target.value)} />
+                </div>
+
+                <div className="col-12">
+                  <label className="form-label">Descripción</label>
+                  <textarea className="form-control" rows={3} value={prodForm.desc} onChange={e => onProdChange('desc', e.target.value)} />
+                </div>
+
+                <div className="col-12 col-md-4">
+                  <label className="form-label">Precio *</label>
+                  <input className="form-control" type="number" value={prodForm.precio} onChange={e => onProdChange('precio', e.target.value)} />
+                </div>
+                <div className="col-12 col-md-4">
+                  <label className="form-label">Stock *</label>
+                  <input className="form-control" type="number" value={prodForm.stock} onChange={e => onProdChange('stock', e.target.value)} />
+                </div>
+                <div className="col-12 col-md-4">
+                  <label className="form-label">Stock Crítico</label>
+                  <input className="form-control" type="number" value={prodForm.stockCritico} onChange={e => onProdChange('stockCritico', e.target.value)} />
+                </div>
+
+                <div className="col-12 col-md-6">
+                  <label className="form-label">Categoría</label>
+                  <input className="form-control" value={prodForm.categoria} onChange={e => onProdChange('categoria', e.target.value)} />
+                </div>
+                <div className="col-12 col-md-6">
+                  <label className="form-label">Imagen (URL)</label>
+                  <input className="form-control" value={prodForm.img} onChange={e => onProdChange('img', e.target.value)} />
+                </div>
+
+                {msg && <div className="col-12"><div className="text-danger">{msg}</div></div>}
               </div>
+            </form>
 
-              <div className="modal-body" style={{maxHeight:'65vh', overflowY:'auto', paddingTop:8, paddingBottom:8}}>
-                <form onSubmit={(e)=>{ e.preventDefault(); saveProd(); }}>
-                  <div className="row g-2">
-                    <div className="col-12 col-md-4">
-                      <label className="form-label">Código *</label>
-                      <input className="form-control" value={prodForm.codigo} onChange={e=>onProdChange('codigo', e.target.value)} />
-                    </div>
-                    <div className="col-12 col-md-8">
-                      <label className="form-label">Nombre *</label>
-                      <input className="form-control" value={prodForm.nombre} onChange={e=>onProdChange('nombre', e.target.value)} />
-                    </div>
-
-                    <div className="col-12">
-                      <label className="form-label">Descripción</label>
-                      <textarea className="form-control" rows={3} value={prodForm.desc} onChange={e=>onProdChange('desc', e.target.value)} />
-                    </div>
-
-                    <div className="col-12 col-md-4">
-                      <label className="form-label">Precio *</label>
-                      <input className="form-control" type="number" value={prodForm.precio} onChange={e=>onProdChange('precio', e.target.value)} />
-                    </div>
-                    <div className="col-12 col-md-4">
-                      <label className="form-label">Stock *</label>
-                      <input className="form-control" type="number" value={prodForm.stock} onChange={e=>onProdChange('stock', e.target.value)} />
-                    </div>
-                    <div className="col-12 col-md-4">
-                      <label className="form-label">Stock Crítico</label>
-                      <input className="form-control" type="number" value={prodForm.stockCritico} onChange={e=>onProdChange('stockCritico', e.target.value)} />
-                    </div>
-
-                    <div className="col-12 col-md-6">
-                      <label className="form-label">Categoría</label>
-                      <input className="form-control" value={prodForm.categoria} onChange={e=>onProdChange('categoria', e.target.value)} />
-                    </div>
-                    <div className="col-12 col-md-6">
-                      <label className="form-label">Imagen (URL)</label>
-                      <input className="form-control" value={prodForm.img} onChange={e=>onProdChange('img', e.target.value)} />
-                    </div>
-
-                    {msg && <div className="col-12"><div className="text-danger">{msg}</div></div>}
-                  </div>
-                </form>
-              </div>
-
-              <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={() => setShowProdModal(false)}>Cancelar</button>
-                <button type="button" className="btn btn-success" onClick={saveProd}>Guardar</button>
-              </div>
+            <div style={{ padding: 12, borderTop: '1px solid #eee', display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+              <button type="button" className="btn btn-secondary" onClick={() => setShowProdModal(false)}>Cancelar</button>
+              <button type="button" className="btn btn-success" onClick={saveProd}>Guardar</button>
             </div>
           </div>
         </div>

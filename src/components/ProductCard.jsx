@@ -1,52 +1,28 @@
 import React from "react";
+import { toast } from 'react-toastify';
 
 export default function ProductCard({ producto, onAdd }) {
   const addToCart = () => {
     try {
-      const raw = localStorage.getItem("cart");
-      let cart = raw ? JSON.parse(raw) : [];
-      // asegurar que cart sea un array (admitir también { items: [...] } por compatibilidad)
-      if (!Array.isArray(cart)) {
-        if (cart && Array.isArray(cart.items)) cart = cart.items.slice();
-        else cart = [];
-      }
+      const itemToAdd = {
+        codigo: producto.codigo,
+        id: producto.id,
+        nombre: producto.nombre,
+        precio: producto.precio ?? 0,
+        img: producto.img ?? "",
+        stock: producto.stock ?? null,
+        origen: producto.origen ?? "",
+        qty: 1,
+      };
 
-      // identificar producto por codigo/id/nombre
-      const idKey = producto.codigo ?? producto.id ?? producto.nombre;
-      const findIdx = cart.findIndex(
-        (p) => (p.codigo ?? p.id ?? p.nombre) === idKey
-      );
+      // Usar onAdd (del contexto) para añadir al carrito
+      if (typeof onAdd === "function") onAdd(itemToAdd);
 
-      if (findIdx > -1) {
-        // ya existe -> incrementar qty sin exceder stock (si existe)
-        const existing = { ...cart[findIdx] };
-        const maxStock =
-          typeof producto.stock === "number" ? producto.stock : Infinity;
-        existing.qty = Math.min((existing.qty ?? 1) + 1, maxStock);
-        cart[findIdx] = existing;
-      } else {
-        // nuevo item
-        const itemToAdd = {
-          codigo: producto.codigo,
-          id: producto.id,
-          nombre: producto.nombre,
-          precio: producto.precio ?? 0,
-          img: producto.img ?? "",
-          stock: producto.stock ?? null,
-          origen: producto.origen ?? "",
-          qty: 1,
-        };
-        cart.push(itemToAdd);
-      }
-
-      localStorage.setItem("cart", JSON.stringify(cart));
-      if (typeof onAdd === "function") onAdd(cart);
-      window.dispatchEvent(new CustomEvent("show-toast", { detail: "Producto agregado" }));
-      window.dispatchEvent(new CustomEvent("cart-changed", { detail: cart }));
-      console.debug("[ProductCard] cart updated:", cart);
+      toast.success('Producto agregado');
+      console.debug("[ProductCard] added via onAdd:", itemToAdd);
     } catch (err) {
       console.error("Error agregando al carrito:", err);
-      window.dispatchEvent(new CustomEvent("show-toast", { detail: "Error agregando producto" }));
+      toast.error('Error agregando producto');
     }
   };
 

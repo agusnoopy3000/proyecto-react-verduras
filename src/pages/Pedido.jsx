@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import regionesYComunas from "../data/regiones_comunas";
 
 export default function Pedido() {
   const navigate = useNavigate();
@@ -80,11 +81,37 @@ export default function Pedido() {
             <input className="form-control" value={tel} onChange={e=>setTel(e.target.value)} />
             {errors.tel && <div className="error">{errors.tel}</div>}
 
-            <label className="form-label">Región</label>
-            <input className="form-control" value={region} onChange={e=>setRegion(e.target.value)} />
+            <div className="col-12 col-md-6">
+              <label className="form-label">Región</label>
+              <select
+                className="form-select"
+                value={region || ""}
+                onChange={e => {
+                  setRegion(e.target.value);
+                  setComuna('');
+                }}
+              >
+                <option value="">Seleccione región</option>
+                {regionesYComunas.map(r => (
+                  <option key={r.region} value={r.region}>{r.region}</option>
+                ))}
+              </select>
+            </div>
 
-            <label className="form-label">Comuna</label>
-            <input className="form-control" value={comuna} onChange={e=>setComuna(e.target.value)} />
+            <div className="col-12 col-md-6">
+              <label className="form-label">Comuna</label>
+              <select
+                className="form-select"
+                value={comuna || ""}
+                onChange={e => setComuna(e.target.value)}
+                disabled={!region}
+              >
+                <option value="">{region ? "Seleccione comuna" : "Seleccione región primero"}</option>
+                {(regionesYComunas.find(r => r.region === region)?.comunas || []).map(c => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+            </div>
 
             <label className="form-label">Comentarios</label>
             <input className="form-control" placeholder="Instrucciones para el repartidor" value={comentarios} onChange={e=>setComentarios(e.target.value)} />

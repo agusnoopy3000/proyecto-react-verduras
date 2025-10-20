@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { toast } from 'react-toastify';
 import Modal from "../components/Modal";
 import productosDefault from "../data/productos"; // tu data inicial
 
@@ -37,8 +38,10 @@ export default function AdminProducts(){
     const toSave = { ...form, precio: parseFloat(form.precio), stock: parseInt(form.stock||0,10) };
     if (edit) {
       setItems(prev => prev.map(p => (p.codigo===edit ? {...p,...toSave} : p)));
+      toast.success('Producto modificado');
     } else {
       setItems(prev => [{...toSave, codigo: form.codigo || `PX${Date.now()}`}, ...prev]);
+      toast.success('Producto añadido');
     }
     setOpen(false);
   };
@@ -71,22 +74,32 @@ export default function AdminProducts(){
       </table>
 
       <Modal open={open} title={edit ? "Editar producto" : "Agregar producto"} onClose={()=>setOpen(false)}>
-        <div style={{display:'grid',gap:8}}>
-          <label>Código</label>
-          <input value={form.codigo} onChange={e=>setForm(f=>({...f,codigo:e.target.value}))} className="form-control"/>
-          <label>Nombre</label>
-          <input value={form.nombre} onChange={e=>setForm(f=>({...f,nombre:e.target.value}))} className="form-control"/>
-          {errors.nombre && <div className="error" style={{color:'#b00020'}}>{errors.nombre}</div>}
-          <label>Origen</label>
-          <input value={form.origen} onChange={e=>setForm(f=>({...f,origen:e.target.value}))} className="form-control"/>
-          {errors.origen && <div className="error" style={{color:'#b00020'}}>{errors.origen}</div>}
-          <label>Stock</label>
-          <input type="number" value={form.stock} onChange={e=>setForm(f=>({...f,stock:e.target.value}))} className="form-control"/>
-          {errors.stock && <div className="error" style={{color:'#b00020'}}>{errors.stock}</div>}
-          <label>Precio</label>
-          <input type="number" step="0.01" value={form.precio} onChange={e=>setForm(f=>({...f,precio:e.target.value}))} className="form-control"/>
-          {errors.precio && <div className="error" style={{color:'#b00020'}}>{errors.precio}</div>}
-          <div style={{display:'flex',gap:8,justifyContent:'flex-end',marginTop:8}}>
+        <div className="row g-3">
+          <div className="col-md-6">
+            <label className="form-label">Código</label>
+            <input value={form.codigo} onChange={e=>setForm(f=>({...f,codigo:e.target.value}))} className="form-control"/>
+          </div>
+          <div className="col-md-6">
+            <label className="form-label">Nombre</label>
+            <input value={form.nombre} onChange={e=>setForm(f=>({...f,nombre:e.target.value}))} className="form-control"/>
+            {errors.nombre && <div className="text-danger">{errors.nombre}</div>}
+          </div>
+          <div className="col-md-6">
+            <label className="form-label">Origen</label>
+            <input value={form.origen} onChange={e=>setForm(f=>({...f,origen:e.target.value}))} className="form-control"/>
+            {errors.origen && <div className="text-danger">{errors.origen}</div>}
+          </div>
+          <div className="col-md-6">
+            <label className="form-label">Stock</label>
+            <input type="number" value={form.stock} onChange={e=>setForm(f=>({...f,stock:e.target.value}))} className="form-control"/>
+            {errors.stock && <div className="text-danger">{errors.stock}</div>}
+          </div>
+          <div className="col-12">
+            <label className="form-label">Precio</label>
+            <input type="number" step="0.01" value={form.precio} onChange={e=>setForm(f=>({...f,precio:e.target.value}))} className="form-control"/>
+            {errors.precio && <div className="text-danger">{errors.precio}</div>}
+          </div>
+          <div className="col-12" style={{display:'flex',gap:8,justifyContent:'flex-end'}}>
             <button className="btn ghost" onClick={()=>setOpen(false)}>Cancelar</button>
             <button className="btn btn-success" onClick={save}>Guardar</button>
           </div>

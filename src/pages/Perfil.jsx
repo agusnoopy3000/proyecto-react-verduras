@@ -4,9 +4,25 @@ import regionesData from "../data/regiones_comunas";
 import { useAuth } from "../context/AuthContext";
 
 export default function Perfil() {
-  const { user } = useAuth();
-  const [nombre, setNombre] = useState(user?.nombre || "");
-  const [email] = useState(user?.email || ""); // campo disabled
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const saved = localStorage.getItem("huertohogar_user");
+    setUser(saved ? JSON.parse(saved) : null);
+  }, []);
+
+  if (!user) {
+    return (
+      <main className="container">
+        <h2>Perfil</h2>
+        <p>No hay usuario registrado. <a href="/registro">Crear cuenta</a></p>
+      </main>
+    );
+  }
+
+  const { user: authUser } = useAuth();
+  const [nombre, setNombre] = useState(authUser?.nombre || "");
+  const [email] = useState(authUser?.email || ""); // campo disabled
   const [tel, setTel] = useState("");
   const [msg, setMsg] = useState("");
   const [region, setRegion] = useState("");

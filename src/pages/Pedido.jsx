@@ -2,86 +2,115 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 export default function Pedido() {
+  const navigate = useNavigate();
   const [fecha, setFecha] = useState("");
+  const [nombre, setNombre] = useState("");
   const [direccion, setDireccion] = useState("");
   const [comentarios, setComentarios] = useState("");
+  const [email, setEmail] = useState("");
+  const [tel, setTel] = useState("");
+  const [region, setRegion] = useState("");
+  const [comuna, setComuna] = useState("");
+  const [errors, setErrors] = useState({});
   const [msg, setMsg] = useState("");
-  const navigate = useNavigate();
 
-  useEffect(() => {
-    const cur = 'pedido';
-    document.querySelectorAll('nav a').forEach(a => {
-      const href = a.getAttribute('href') || '';
-      if (href.includes(cur)) a.classList.add('active');
-    });
-  }, []);
+  useEffect(() => { window.scrollTo(0,0); }, []);
 
-  const confirmarPedido = (e) => {
-    e.preventDefault();
-    // Puedes añadir validaciones: fecha mínima (mañana) etc.
-    const cart = localStorage.getItem('cart');
-    if (cart) {
-      localStorage.setItem('pedidoConfirmado', cart);
+  const validar = () => {
+    const e = {};
+    if (!nombre.trim()) e.nombre = "Nombre requerido.";
+    if (!direccion.trim()) e.direccion = "Dirección requerida.";
+    if (!email.trim()) e.email = "Email requerido.";
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) e.email = "Email inválido.";
+    if (!tel.trim()) e.tel = "Teléfono requerido.";
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  };
+
+  const handleConfirm = (ev) => {
+    ev?.preventDefault();
+    if (!validar()) return;
+    try {
+      const cart = JSON.parse(localStorage.getItem("cart") || "[]");
+      const orderId = `ORD${Date.now()}`;
+      const order = {
+        id: orderId,
+        created: new Date().toISOString(),
+        entregaPreferida: fecha || null,
+        customer: { nombre, direccion, email, tel, region, comuna },
+        comentarios: comentarios || "",
+        items: Array.isArray(cart) ? cart : []
+      };
+      // guardar pedido
+      localStorage.setItem("last_order", JSON.stringify(order));
+      // alternativa para compatibilidad con versiones antiguas
+      try { localStorage.setItem("pedidoConfirmado", JSON.stringify(order.items)); } catch {}
+      // navegar a confirmación pasando orderId
+      navigate("/confirmacion", { state: { orderId } });
+    } catch (err) {
+      console.error("Error confirmando pedido:", err);
+      setMsg("Ocurrió un error. Intenta nuevamente.");
     }
-    navigate('/confirmacion');
   };
 
   return (
-    <>
-      <main className="container">
-        <section className="form">
-          <h2>Pedido y Informacion entrega</h2>
-          <div style={{height:24}}></div>
-          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16}}>
-            <div>
-              <label className="form-label" htmlFor="fecha">Fecha preferida de entrega</label>
-              <input type="date" id="fecha" className="form-control" value={fecha} onChange={e => setFecha(e.target.value)} />
-              <p className="help">Selecciona cualquier día a partir de mañana.</p>
+    <main className="container">
+      <section className="form">
+        <h2>Pedido y información de entrega</h2>
+        <div style={{height:24}} />
+        <form onSubmit={handleConfirm} style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16}}>
+          <div>
+            <label className="form-label">Fecha preferida de entrega</label>
+            <input type="date" className="form-control" value={fecha} onChange={e=>setFecha(e.target.value)} />
+            <p className="help">Selecciona cualquier día a partir de mañana.</p>
 
-              <label className="form-label" htmlFor="direccion">Dirección</label>
-              <input id="direccion" type="text" placeholder="Calle, número, comuna" className="form-control" value={direccion} onChange={e => setDireccion(e.target.value)} />
+            <label className="form-label">Nombre</label>
+            <input className="form-control" value={nombre} onChange={e=>setNombre(e.target.value)} />
+            {errors.nombre && <div className="error">{errors.nombre}</div>}
 
-              <label className="form-label" htmlFor="comentarios">Comentarios</label>
-              <input id="comentarios" type="text" placeholder="Instrucciones para el repartidor" className="form-control" value={comentarios} onChange={e => setComentarios(e.target.value)} />
+            <label className="form-label">Dirección</label>
+            <input className="form-control" placeholder="Calle, número, comuna" value={direccion} onChange={e=>setDireccion(e.target.value)} />
+            {errors.direccion && <div className="error">{errors.direccion}</div>}
 
-              <button className="btn btn-success mt-3" id="confirmarPedido" onClick={confirmarPedido}>Confirmar</button>
-              <p id="msgPedido" className="help">{msg}</p>
+            <label className="form-label">Email</label>
+            <input className="form-control" type="email" value={email} onChange={e=>setEmail(e.target.value)} />
+            {errors.email && <div className="error">{errors.email}</div>}
+
+            <label className="form-label">Teléfono</label>
+            <input className="form-control" value={tel} onChange={e=>setTel(e.target.value)} />
+            {errors.tel && <div className="error">{errors.tel}</div>}
+
+            <label className="form-label">Región</label>
+            <input className="form-control" value={region} onChange={e=>setRegion(e.target.value)} />
+
+            <label className="form-label">Comuna</label>
+            <input className="form-control" value={comuna} onChange={e=>setComuna(e.target.value)} />
+
+            <label className="form-label">Comentarios</label>
+            <input className="form-control" placeholder="Instrucciones para el repartidor" value={comentarios} onChange={e=>setComentarios(e.target.value)} />
+
+            <div style={{height:12}} />
+            <div style={{display:'flex',gap:8,justifyContent:'flex-end',marginTop:8}}>
+              <button type="button" className="btn ghost" onClick={()=>navigate("/catalogo")}>Volver al catálogo</button>
+              <button type="submit" className="btn btn-success">Confirmar pedido</button>
             </div>
 
-            <div>
-              <h3>Estado</h3>
-              <ul id="estadoPedido">
-                <li>Carrito creado</li>
-                <li>Pedido confirmado</li>
-                <li>En preparación</li>
-                <li>En camino</li>
-                <li>Entregado</li>
-              </ul>
-            </div>
+            {msg && <p className="error" style={{marginTop:8}}>{msg}</p>}
           </div>
-        </section>
-      </main>
 
-      <footer className="site">
-        <div className="container inner">
-          <div className="cols">
-            <div>
-              <strong>HuertoHogar</strong>
-              <p>Productos frescos y orgánicos. Calidad local.</p>
-            </div>
-            <div>
-              <p><strong>Tiendas</strong></p>
-              <p>Santiago · Puerto Montt · Villarrica · Nacimiento</p>
-              <p>Viña del Mar · Valparaíso · Concepción</p>
-            </div>
-            <div>
-              <p><strong>Contacto</strong></p>
-              <p>contacto@huertohogar.cl</p>
-            </div>
+          <div>
+            <h3>Estado</h3>
+            <ul id="estadoPedido">
+              <li>Carrito creado</li>
+              <li>Pedido confirmado</li>
+              <li>En preparación</li>
+              <li>En camino</li>
+              <li>Entregado</li>
+            </ul>
+            <p className="help">Al confirmar se guardará el pedido y se mostrará la pantalla de confirmación.</p>
           </div>
-          <div>© 2025 HuertoHogar · Sitio educativo</div>
-        </div>
-      </footer>
-    </>
+        </form>
+      </section>
+    </main>
   );
 }

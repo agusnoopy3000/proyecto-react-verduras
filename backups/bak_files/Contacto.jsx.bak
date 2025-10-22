@@ -1,0 +1,106 @@
+import React, { useEffect, useState } from "react";
+
+export default function Contacto() {
+  const [nombre, setNombre] = useState("");
+  const [email, setEmail] = useState("");
+  const [msj, setMsj] = useState("");
+  const [conMsg, setConMsg] = useState("");
+
+  useEffect(() => {
+    const cur = 'contacto';
+    document.querySelectorAll('nav a').forEach(a => {
+      const href = a.getAttribute('href') || '';
+      if (href.includes(cur)) a.classList.add('active');
+    });
+  }, []);
+
+  const validateAndSend = (e) => {
+    e.preventDefault();
+    let msg = '';
+    if (!nombre.trim()) msg = 'El nombre es requerido.';
+    else if (nombre.length > 100) msg = 'El nombre no puede superar 100 caracteres.';
+    else if (email.length > 100) msg = 'El email no puede superar 100 caracteres.';
+    else if (!/^.+@(duoc\.cl|profesor\.duoc\.cl|gmail\.com)$/.test(email)) msg = 'Solo se permiten correos @duoc.cl, @profesor.duoc.cl o @gmail.com.';
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) msg = 'Email inválido.';
+    else if (!msj.trim()) msg = 'El comentario es requerido.';
+    else if (msj.length > 500) msg = 'El comentario no puede superar 500 caracteres.';
+
+    setConMsg(msg);
+    if (!msg) {
+      // Aquí podrías enviar a una API. Por ahora solo confirmamos.
+      alert('Mensaje enviado correctamente.');
+      setNombre('');
+      setEmail('');
+      setMsj('');
+    }
+  };
+
+  return (
+    <>
+      <header className="site">
+        <div className="container nav">
+          <div className="brand">
+            <img src="/assets/img/huerto_hogar.jpeg" alt="Logo HuertoHogar" style={{width:36,height:36,objectFit:'cover',borderRadius:8,marginRight:8}} />
+            <a href="/">HuertoHogar</a>
+          </div>
+          <nav className="navbar navbar-expand-lg">
+            <ul className="navbar-nav me-auto mb-2 mb-lg-0">
+              <li className="nav-item"><a className="nav-link" href="/">Inicio</a></li>
+              <li className="nav-item"><a className="nav-link" href="/catalogo">Catálogo</a></li>
+              <li className="nav-item"><a className="nav-link" href="/carrito">Carrito</a></li>
+              <li className="nav-item"><a className="nav-link" href="/pedido">Pedido</a></li>
+              <li className="nav-item"><a className="nav-link" href="/nosotros">Nosotros</a></li>
+              <li className="nav-item"><a className="nav-link" href="/blog">Blog</a></li>
+              <li className="nav-item"><a className="nav-link" href="/contacto">Contacto</a></li>
+              <li className="nav-item"><a className="nav-link" href="/login">Ingresar</a></li>
+              <li className="nav-item"><a className="nav-link" href="/registro">Registro</a></li>
+              <li className="nav-item"><a className="nav-link" href="/perfil">Perfil</a></li>
+            </ul>
+          </nav>
+        </div>
+      </header>
+
+      <main className="container">
+        <section className="form">
+          <h2>Contacto</h2>
+          <label className="form-label" htmlFor="conNombre">Nombre</label>
+          <input id="conNombre" type="text" className="form-control" required maxLength={100} value={nombre} onChange={e => setNombre(e.target.value)} />
+
+          <label className="form-label" htmlFor="conEmail">Email</label>
+          <input id="conEmail" type="email" className="form-control" maxLength={100} required value={email} onChange={e => setEmail(e.target.value)} />
+
+          <label className="form-label" htmlFor="conMsj">Mensaje</label>
+          <input id="conMsj" type="text" placeholder="¿En qué podemos ayudarte?" className="form-control" required maxLength={500} value={msj} onChange={e => setMsj(e.target.value)} />
+
+          <div style={{height:32}}></div>
+          <button className="btn btn-success mt-3" id="btnContacto" onClick={validateAndSend}>Enviar</button>
+
+          <p id="conMsg" className="help" style={{color: conMsg ? 'var(--bs-danger)' : 'inherit'}}>{conMsg}</p>
+
+        </section>
+
+      </main>
+
+      <footer className="site">
+        <div className="container inner">
+          <div className="cols">
+            <div>
+              <strong>HuertoHogar</strong>
+              <p>Productos frescos y orgánicos. Calidad local.</p>
+            </div>
+            <div>
+              <p><strong>Tiendas</strong></p>
+              <p>Santiago · Puerto Montt · Villarrica · Nacimiento</p>
+              <p>Viña del Mar · Valparaíso · Concepción</p>
+            </div>
+            <div>
+              <p><strong>Contacto</strong></p>
+              <p>contacto@huertohogar.cl</p>
+            </div>
+          </div>
+          <div>© 2025 HuertoHogar · Sitio educativo</div>
+        </div>
+      </footer>
+    </>
+  );
+}

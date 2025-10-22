@@ -1,22 +1,84 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 
-const Contacto = () => (
-  <>
-    {/* Puedes importar y usar <Header /> y <Footer /> si ya existen como en Home.jsx */}
-    <main className="container">
-      <section className="form">
-        <h2>Contacto</h2>
-        <label className="form-label" htmlFor="conNombre">Nombre</label>
-        <input id="conNombre" type="text" className="form-control" required maxLength={100} />
-        <label className="form-label" htmlFor="conEmail">Email</label>
-        <input id="conEmail" type="email" className="form-control" maxLength={100} required />
-        <label className="form-label" htmlFor="conMsj">Mensaje</label>
-        <input id="conMsj" type="text" placeholder="¿En qué podemos ayudarte?" className="form-control" required maxLength={500} />
-        <div style={{height:32}}></div>
-        <button className="btn btn-success mt-3" id="btnContacto">Enviar</button>
-      </section>
-    </main>
-  </>
-);
+export default function Contacto() {
+  const [nombre, setNombre] = useState("");
+  const [email, setEmail] = useState("");
+  const [msj, setMsj] = useState("");
+  const [conMsg, setConMsg] = useState("");
 
-export default Contacto;
+  useEffect(() => {
+    const cur = 'contacto';
+    document.querySelectorAll('nav a').forEach(a => {
+      const href = a.getAttribute('href') || '';
+      if (href.includes(cur)) a.classList.add('active');
+    });
+  }, []);
+
+  const validateAndSend = (e) => {
+    e.preventDefault();
+    let msg = '';
+    if (!nombre.trim()) msg = 'El nombre es requerido.';
+    else if (nombre.length > 100) msg = 'El nombre no puede superar 100 caracteres.';
+    else if (email.length > 100) msg = 'El email no puede superar 100 caracteres.';
+    else if (!/^.+@(duoc\.cl|profesor\.duoc\.cl|gmail\.com)$/.test(email)) msg = 'Solo se permiten correos @duoc.cl, @profesor.duoc.cl o @gmail.com.';
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) msg = 'Email inválido.';
+    else if (!msj.trim()) msg = 'El comentario es requerido.';
+    else if (msj.length > 500) msg = 'El comentario no puede superar 500 caracteres.';
+
+    setConMsg(msg);
+    if (!msg) {
+      // Aquí podrías enviar a una API. Por ahora solo confirmamos.
+      alert('Mensaje enviado correctamente.');
+      setNombre('');
+      setEmail('');
+      setMsj('');
+    }
+  };
+
+  return (
+    <>
+      <main className="container">
+        <section>
+          <h2>Contacto</h2>
+          <p>Envíanos un mensaje o visita nuestras tiendas.</p>
+          <form>
+            <div className="mb-3">
+              <label className="form-label">Nombre</label>
+              <input type="text" className="form-control" />
+            </div>
+            <div className="mb-3">
+              <label className="form-label">Email</label>
+              <input type="email" className="form-control" />
+            </div>
+            <div className="mb-3">
+              <label className="form-label">Mensaje</label>
+              <textarea className="form-control"></textarea>
+            </div>
+            <button type="submit" className="btn btn-primary">Enviar</button>
+          </form>
+        </section>
+      </main>
+
+      <footer className="site">
+        <div className="container inner">
+          <div className="cols">
+            <div>
+              <strong>HuertoHogar</strong>
+              <p>Productos frescos y orgánicos. Calidad local.</p>
+            </div>
+            <div>
+              <p><strong>Tiendas</strong></p>
+              <p>Santiago · Puerto Montt · Villarrica · Nacimiento</p>
+              <p>Viña del Mar · Valparaíso · Concepción</p>
+            </div>
+            <div>
+              <p><strong>Contacto</strong></p>
+              <p>contacto@huertohogar.cl</p>
+            </div>
+          </div>
+          <div>© 2025 HuertoHogar · Sitio educativo</div>
+        </div>
+      </footer>
+    </>
+  );
+}

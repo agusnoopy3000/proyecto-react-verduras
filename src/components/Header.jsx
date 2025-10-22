@@ -1,16 +1,29 @@
-export default function Header() {
+import React from "react";
+import { NavLink } from "react-router-dom";
+
+const Header = () => {
+  const linkClass = ({ isActive }) => (isActive ? "nav-link active" : "nav-link");
   return (
-    <nav className="navbar navbar-expand-lg navbar-dark bg-success">
-      <div className="container">
-        <a className="navbar-brand" href="/">HuertoHogar 🌿</a>
-        <div className="collapse navbar-collapse">
-          <ul className="navbar-nav ms-auto">
-            <li className="nav-item"><a className="nav-link" href="/catalogo">Catálogo</a></li>
-            <li className="nav-item"><a className="nav-link" href="/ofertas">Ofertas</a></li>
-            <li className="nav-item"><a className="nav-link" href="/checkout">Carrito</a></li>
+    <header className="site">
+      <div className="container nav">
+        <div className="brand"><NavLink to="/">HuertoHogar</NavLink></div>
+        <nav>
+          <ul>
+            <li><NavLink className={linkClass} to="/">Inicio</NavLink></li>
+            <li><NavLink className={linkClass} to="/catalogo">Catálogo</NavLink></li>
+            <li><NavLink className={linkClass} to="/carrito">Carrito</NavLink></li>
+            {/* se quita enlace directo a /pedido según lo pediste */}
+            <li><NavLink className={linkClass} to="/nosotros">Nosotros</NavLink></li>
+            <li><NavLink className={linkClass} to="/blog">Blog</NavLink></li>
+            <li><NavLink className={linkClass} to="/contacto">Contacto</NavLink></li>
+            <li><NavLink className={linkClass} to="/login">Ingresar</NavLink></li>
+            <li><NavLink className={linkClass} to="/registro">Registro</NavLink></li>
+            <li><NavLink className={linkClass} to="/perfil">Perfil</NavLink></li>
           </ul>
-        </div>
+        </nav>
       </div>
-    </nav>
+    </header>
   );
-}
+};
+
+export default Header;

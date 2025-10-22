@@ -1,0 +1,89 @@
+import React, { useEffect } from "react";
+
+export default function Blog() {
+  useEffect(() => {
+    const cur = 'blog';
+    document.querySelectorAll('nav a').forEach(a => {
+      const href = a.getAttribute('href') || '';
+      if (href.includes(cur)) a.classList.add('active');
+    });
+  }, []);
+
+  return (
+    <>
+      <style>{`
+        h3.destacado {
+          color: #198754;
+          background: #e9fbe7;
+          padding: 8px 16px;
+          border-radius: 8px;
+          font-weight: bold;
+          box-shadow: 0 2px 8px #0001;
+          margin-bottom: 12px;
+          display: inline-block;
+        }
+      `}</style>
+
+      <header className="site">
+        <div className="container nav">
+          <div className="brand">
+            <img src="/assets/img/huerto_hogar.jpeg" alt="Logo HuertoHogar" style={{width:36,height:36,objectFit:'cover',borderRadius:8,marginRight:8}} />
+            <a href="/">HuertoHogar</a>
+          </div>
+          <nav className="navbar navbar-expand-lg">
+            <ul className="navbar-nav me-auto mb-2 mb-lg-0">
+              <li className="nav-item"><a className="nav-link" href="/">Inicio</a></li>
+              <li className="nav-item"><a className="nav-link" href="/catalogo">Catálogo</a></li>
+              <li className="nav-item"><a className="nav-link" href="/carrito">Carrito</a></li>
+              <li className="nav-item"><a className="nav-link" href="/pedido">Pedido</a></li>
+              <li className="nav-item"><a className="nav-link" href="/nosotros">Nosotros</a></li>
+              <li className="nav-item"><a className="nav-link" href="/blog">Blog</a></li>
+              <li className="nav-item"><a className="nav-link" href="/contacto">Contacto</a></li>
+              <li className="nav-item"><a className="nav-link" href="/login">Ingresar</a></li>
+              <li className="nav-item"><a className="nav-link" href="/registro">Registro</a></li>
+              <li className="nav-item"><a className="nav-link" href="/perfil">Perfil</a></li>
+            </ul>
+          </nav>
+        </div>
+      </header>
+
+      <main className="container">
+        <section className="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-3">
+          <article className="card shadow-sm p-3">
+            <h3 className="destacado">Cómo elegir frutas de temporada</h3>
+            <p>Elegir frutas de temporada es clave para disfrutar de productos más frescos, sabrosos y económicos. Las frutas de temporada suelen estar en su punto óptimo de maduración, lo que significa mejor sabor y mayor valor nutricional. Además, al consumir productos locales y de temporada, apoyas a los agricultores de tu zona y reduces la huella de carbono. Antes de comprar, infórmate sobre cuáles son las frutas propias de cada estación y busca aquellas que luzcan firmes, con buen color y aroma natural. Evita las que tengan golpes o manchas oscuras.</p>
+            <a href="https://www.odepa.gob.cl/precios/mejores-alimentos-de-temporada" target="_blank" rel="noopener noreferrer">Ver más sobre frutas de temporada</a>
+          </article>
+
+          <article className="card shadow-sm p-3">
+            <h3 className="destacado">Beneficios de productos orgánicos</h3>
+            <p>Los productos orgánicos se cultivan sin pesticidas ni fertilizantes sintéticos, lo que los hace más saludables para ti y para el medio ambiente. Consumir orgánicos puede reducir la exposición a residuos químicos y aportar más antioxidantes y nutrientes. Además, la agricultura orgánica promueve la biodiversidad, cuida los suelos y utiliza prácticas sostenibles. Al elegir productos orgánicos, contribuyes a una alimentación más natural y apoyas métodos de producción responsables con la naturaleza.</p>
+            <a href="https://www.tuasaude.com/es/que-son-los-alimentos-organicos/" target="_blank" rel="noopener noreferrer">Ver mas sobre los beneficios de alimentos organicos</a>
+          </article>
+        </section>
+
+      </main>
+
+      <footer className="site">
+        <div className="container inner">
+          <div className="cols">
+            <div>
+              <strong>HuertoHogar</strong>
+              <p>Productos frescos y orgánicos. Calidad local.</p>
+            </div>
+            <div>
+              <p><strong>Tiendas</strong></p>
+              <p>Santiago · Puerto Montt · Villarrica · Nacimiento</p>
+              <p>Viña del Mar · Valparaíso · Concepción</p>
+            </div>
+            <div>
+              <p><strong>Contacto</strong></p>
+              <p>contacto@huertohogar.cl</p>
+            </div>
+          </div>
+          <div>© 2025 HuertoHogar · Sitio educativo</div>
+        </div>
+      </footer>
+    </>
+  );
+}

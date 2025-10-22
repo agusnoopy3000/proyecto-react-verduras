@@ -1,0 +1,110 @@
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+
+export default function Pedido() {
+  const [fecha, setFecha] = useState("");
+  const [direccion, setDireccion] = useState("");
+  const [comentarios, setComentarios] = useState("");
+  const [msg, setMsg] = useState("");
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const cur = 'pedido';
+    document.querySelectorAll('nav a').forEach(a => {
+      const href = a.getAttribute('href') || '';
+      if (href.includes(cur)) a.classList.add('active');
+    });
+  }, []);
+
+  const confirmarPedido = (e) => {
+    e.preventDefault();
+    // Puedes añadir validaciones: fecha mínima (mañana) etc.
+    const cart = localStorage.getItem('cart');
+    if (cart) {
+      localStorage.setItem('pedidoConfirmado', cart);
+    }
+    navigate('/confirmacion');
+  };
+
+  return (
+    <>
+      <header className="site">
+        <div className="container nav">
+          <div className="brand">
+            <img src="/assets/img/huerto_hogar.jpeg" alt="Logo HuertoHogar" style={{width:36,height:36,objectFit:'cover',borderRadius:8,marginRight:8}} />
+            <a href="/">HuertoHogar</a>
+          </div>
+          <nav className="navbar navbar-expand-lg">
+            <ul className="navbar-nav me-auto mb-2 mb-lg-0">
+              <li className="nav-item"><a className="nav-link" href="/">Inicio</a></li>
+              <li className="nav-item"><a className="nav-link" href="/catalogo">Catálogo</a></li>
+              <li className="nav-item"><a className="nav-link" href="/carrito">Carrito</a></li>
+              <li className="nav-item"><a className="nav-link" href="/pedido">Pedido</a></li>
+              <li className="nav-item"><a className="nav-link" href="/nosotros">Nosotros</a></li>
+              <li className="nav-item"><a className="nav-link" href="/blog">Blog</a></li>
+              <li className="nav-item"><a className="nav-link" href="/contacto">Contacto</a></li>
+              <li className="nav-item"><a className="nav-link" href="/login">Ingresar</a></li>
+              <li className="nav-item"><a className="nav-link" href="/registro">Registro</a></li>
+              <li className="nav-item"><a className="nav-link" href="/perfil">Perfil</a></li>
+            </ul>
+          </nav>
+        </div>
+      </header>
+
+      <main className="container">
+        <section className="form">
+          <h2>Pedido y Informacion entrega</h2>
+          <div style={{height:24}}></div>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16}}>
+            <div>
+              <label className="form-label" htmlFor="fecha">Fecha preferida de entrega</label>
+              <input type="date" id="fecha" className="form-control" value={fecha} onChange={e => setFecha(e.target.value)} />
+              <p className="help">Selecciona cualquier día a partir de mañana.</p>
+
+              <label className="form-label" htmlFor="direccion">Dirección</label>
+              <input id="direccion" type="text" placeholder="Calle, número, comuna" className="form-control" value={direccion} onChange={e => setDireccion(e.target.value)} />
+
+              <label className="form-label" htmlFor="comentarios">Comentarios</label>
+              <input id="comentarios" type="text" placeholder="Instrucciones para el repartidor" className="form-control" value={comentarios} onChange={e => setComentarios(e.target.value)} />
+
+              <button className="btn btn-success mt-3" id="confirmarPedido" onClick={confirmarPedido}>Confirmar</button>
+              <p id="msgPedido" className="help">{msg}</p>
+            </div>
+
+            <div>
+              <h3>Estado</h3>
+              <ul id="estadoPedido">
+                <li>Carrito creado</li>
+                <li>Pedido confirmado</li>
+                <li>En preparación</li>
+                <li>En camino</li>
+                <li>Entregado</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer className="site">
+        <div className="container inner">
+          <div className="cols">
+            <div>
+              <strong>HuertoHogar</strong>
+              <p>Productos frescos y orgánicos. Calidad local.</p>
+            </div>
+            <div>
+              <p><strong>Tiendas</strong></p>
+              <p>Santiago · Puerto Montt · Villarrica · Nacimiento</p>
+              <p>Viña del Mar · Valparaíso · Concepción</p>
+            </div>
+            <div>
+              <p><strong>Contacto</strong></p>
+              <p>contacto@huertohogar.cl</p>
+            </div>
+          </div>
+          <div>© 2025 HuertoHogar · Sitio educativo</div>
+        </div>
+      </footer>
+    </>
+  );
+}

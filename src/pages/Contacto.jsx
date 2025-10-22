@@ -38,24 +38,25 @@ export default function Contacto() {
   return (
     <>
       <main className="container">
-        <section className="form">
+        <section>
           <h2>Contacto</h2>
-          <label className="form-label" htmlFor="conNombre">Nombre</label>
-          <input id="conNombre" type="text" className="form-control" required maxLength={100} value={nombre} onChange={e => setNombre(e.target.value)} />
-
-          <label className="form-label" htmlFor="conEmail">Email</label>
-          <input id="conEmail" type="email" className="form-control" maxLength={100} required value={email} onChange={e => setEmail(e.target.value)} />
-
-          <label className="form-label" htmlFor="conMsj">Mensaje</label>
-          <input id="conMsj" type="text" placeholder="¿En qué podemos ayudarte?" className="form-control" required maxLength={500} value={msj} onChange={e => setMsj(e.target.value)} />
-
-          <div style={{height:32}}></div>
-          <button className="btn btn-success mt-3" id="btnContacto" onClick={validateAndSend}>Enviar</button>
-
-          <p id="conMsg" className="help" style={{color: conMsg ? 'var(--bs-danger)' : 'inherit'}}>{conMsg}</p>
-
+          <p>Envíanos un mensaje o visita nuestras tiendas.</p>
+          <form>
+            <div className="mb-3">
+              <label className="form-label">Nombre</label>
+              <input type="text" className="form-control" />
+            </div>
+            <div className="mb-3">
+              <label className="form-label">Email</label>
+              <input type="email" className="form-control" />
+            </div>
+            <div className="mb-3">
+              <label className="form-label">Mensaje</label>
+              <textarea className="form-control"></textarea>
+            </div>
+            <button type="submit" className="btn btn-primary">Enviar</button>
+          </form>
         </section>
-
       </main>
 
       <footer className="site">

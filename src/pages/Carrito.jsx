@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import productosDefault from "../data/productos";
 import { useCart } from "../context/CartContext";
+import { useNavigate } from 'react-router-dom';  // Agrega este import
 
 export default function Carrito() {
-  const navigate = useNavigate();
   const { cart: cartObj, removeFromCart, clearCart } = useCart();
   const [cart, setCart] = useState([]);
+  const navigate = useNavigate();  // Agrega esto
 
   const loadCatalog = () => {
     try {

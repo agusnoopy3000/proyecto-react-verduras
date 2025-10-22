@@ -1,47 +1,56 @@
-import React, { useEffect, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import React, { useEffect, useState, useRef } from "react";
+import { useLocation, useNavigate } from 'react-router-dom';  // Agrega estos imports
+import { useCart } from "../context/CartContext";
+import productos from "../data/productos";
 
 export default function Confirmacion() {
   const loc = useLocation();
-  const navigate = useNavigate();
+  const navigate = useNavigate();  // Agrega esto
+  const { cart, clearCart } = useCart();
   const [order, setOrder] = useState(null);
+  const hasProcessed = useRef(false);
 
   useEffect(() => {
+    if (hasProcessed.current) return;
+    hasProcessed.current = true;
+
     const orderId = loc.state?.orderId;
     let found = null;
 
+    // Intentar cargar el pedido desde localStorage
     try {
       const raw = localStorage.getItem("last_order");
       if (raw) {
-        const parsed = JSON.parse(raw);
-        if (parsed && parsed.id) found = parsed;
+        found = JSON.parse(raw);
       }
     } catch {}
 
+    // Si no hay pedido guardado, construir uno desde el carrito actual
     if (!found) {
       try {
-        const rawCart = localStorage.getItem("pedidoConfirmado") || localStorage.getItem("pedido_confirmado");
-        if (rawCart) {
-          const items = JSON.parse(rawCart);
-          if (Array.isArray(items)) {
-            found = {
-              id: orderId ? orderId : `ORD${Date.now()}`,
-              created: new Date().toISOString(),
-              customer: { nombre: "", direccion: "", email: "", tel: "", region: "", comuna: "" },
-              items
-            };
-          }
+        const items = Object.entries(cart).map(([codigo, qty]) => {
+          const producto = productos.find(p => p.codigo === codigo);
+          return producto ? { ...producto, qty } : null;
+        }).filter(Boolean);
+        if (items.length > 0) {
+          found = {
+            id: orderId ? orderId : `ORD${Date.now()}`,
+            created: new Date().toISOString(),
+            customer: { nombre: "", direccion: "", email: "", tel: "", region: "", comuna: "" },
+            items
+          };
         }
       } catch {}
     }
 
     if (found) {
       setOrder(found);
-      try { localStorage.removeItem("cart"); } catch {}
+      // Limpiar el carrito usando el contexto
+      clearCart();
     } else {
       setOrder(null);
     }
-  }, [loc.state]);
+  }, [loc.state, clearCart]);
 
   if (!order) {
     return (

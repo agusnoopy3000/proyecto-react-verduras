@@ -1,7 +1,15 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Link } from "react-router-dom";
 
 export default function Home() {
+  useEffect(() => {
+    const cur = 'home';
+    document.querySelectorAll('nav a').forEach(a => {
+      const href = a.getAttribute('href') || '';
+      if (href.includes(cur)) a.classList.add('active');
+    });
+  }, []);
+
   return (
     <>
       <main className="container">
@@ -11,25 +19,19 @@ export default function Home() {
             <p>Frutas y verduras orgánicas. Productos lácteos y alimentos saludables. Compra simple y rápida.</p>
             <div className="controls">
               <Link className="btn btn-success" to="/catalogo">Ver catálogo</Link>
-              <Link className="btn btn-outline-success" to="/registro" style={{ background: "none" }}>Crear cuenta</Link>
+              <Link className="btn btn-outline-success" to="/registro" style={{background: 'none'}}>Crear cuenta</Link>
             </div>
           </div>
-
-          <div className="card shadow-sm p-3 mb-4" style={{ maxWidth: 600, margin: "auto" }}>
-            <video controls poster="/assets/img/huerto_hogar.jpeg" style={{ width: "100%", borderRadius: 8 }}>
-              <source src="/assets/video/video.mp4" type="video/mp4" />
-              Tu navegador no soporta video HTML5.
+          <div className="card shadow-sm p-3 mb-4" style={{maxWidth: '600px', margin: 'auto'}}>
+            <video controls poster="assets/img/huerto_hogar.jpeg" style={{width: '100%', borderRadius: '8px'}}>
+              <source src="assets/video/video.mp4" type="video/mp4" />
+              
             </video>
-            <p className="help text-center">Video demostrativo del funcionamiento de HuertoHogar y Productos organicos</p>
+            <p className="help text-center">Video demostrativo del funcionamiento de HuertoHogar y Productos orgánicos</p>
           </div>
         </section>
 
-        <section>
-          <h2>Categorías destacadas</h2>
-          <div className="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-3" id="catsHome"></div>
-        </section>
-
-        <section className="category-descriptions mb-4" style={{ background: "#f8f9fa", paddingTop: "1.5rem", paddingBottom: "0.5rem" }}>
+        <section className="category-descriptions mb-4" style={{background: '#f8f9fa', paddingTop: '1.5rem', paddingBottom: '0.5rem'}}>
           <div className="container">
             <h2 className="mb-3">Categorías y Descripciones</h2>
             <div className="mb-3">
@@ -50,29 +52,7 @@ export default function Home() {
             </div>
           </div>
         </section>
-
       </main>
-
-      <footer className="site">
-        <div className="container inner">
-          <div className="cols">
-            <div>
-              <strong>HuertoHogar</strong>
-              <p>Productos frescos y orgánicos. Calidad local.</p>
-            </div>
-            <div>
-              <p><strong>Tiendas</strong></p>
-              <p>Santiago · Puerto Montt · Villarrica · Nacimiento</p>
-              <p>Viña del Mar · Valparaíso · Concepción</p>
-            </div>
-            <div>
-              <p><strong>Contacto</strong></p>
-              <p>contacto@huertohogar.cl</p>
-            </div>
-          </div>
-          <div>© 2025 HuertoHogar · Sitio educativo</div>
-        </div>
-      </footer>
     </>
   );
 }

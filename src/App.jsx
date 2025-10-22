@@ -2,6 +2,7 @@ import React from "react";
 import { Routes, Route } from "react-router-dom";
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { CartProvider } from "./context/CartContext";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 import Home from "./pages/Home";
@@ -16,7 +17,7 @@ import Perfil from "./pages/Perfil";
 import Admin from "./pages/Admin";
 import Contacto from "./pages/Contacto";
 import Nosotros from "./pages/Nosotros";
-import Blog from "./pages/Blog";
+import Blog from "./pages/Blog.jsx";
 import Offers from "./pages/Offers";
 import Checkout from "./pages/Checkout";
 import Success from "./pages/Success";
@@ -24,7 +25,7 @@ import ErrorPayment from "./pages/ErrorPayment";
 
 export default function App() {
   return (
-    <>
+    <CartProvider>
       <Header />
       <main className="container mt-4">
         <Routes>
@@ -49,6 +50,6 @@ export default function App() {
       </main>
       <ToastContainer position="top-right" autoClose={3000} />
       <Footer />
-    </>
+    </CartProvider>
   );
 }

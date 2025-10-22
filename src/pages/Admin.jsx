@@ -210,7 +210,7 @@ export default function Admin() {
         )}
       </div>
 
-      {/* User Modal (replaced) */}
+      {/* User Modal */}
       {showUserModal && (
         <div
           className="modal-backdrop"
@@ -301,7 +301,7 @@ export default function Admin() {
         </div>
       )}
 
-      {/* Product Modal (replaced) */}
+      {/* Product Modal */}
       {showProdModal && (
         <div
           className="modal-backdrop"

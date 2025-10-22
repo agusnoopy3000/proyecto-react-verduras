@@ -1,14 +1,54 @@
-// Cargar todas las imágenes de la carpeta como URLs (Vite)
-const images = import.meta.glob('../assets/img/*', { eager: true, as: 'url' });
+/**
+ * Carga imágenes compatible con:
+ * - Vite: import.meta.glob (eager, as: 'url')
+ * - Webpack (Karma tests): require.context
+ * - Fallback estático cuando no hay bundler de assets
+ */
+const imagesMap = (() => {
+  // Intentar Vite import.meta.glob de forma dinámica (evita que webpack lo analice)
+  try {
+    const globFn = new Function(
+      'return (typeof import !== "undefined" && typeof import.meta !== "undefined" && import.meta.glob) ? import.meta.glob : undefined'
+    )();
+    if (globFn) {
+      const modules = globFn('../assets/img/*', { eager: true, as: 'url' });  // Nota: Esto no funciona para public; usa fallback
+      return Object.fromEntries(Object.entries(modules).map(([path, url]) => [path.split('/').pop().toLowerCase(), url]));
+    }
+  } catch (e) { /* no Vite */ }
 
-// Mapear por nombre de archivo en minúsculas para búsqueda tolerante a mayúsculas
-const imagesMap = Object.fromEntries(
-  Object.entries(images).map(([path, url]) => [path.split('/').pop().toLowerCase(), url])
-);
+  // Intentar Webpack require.context
+  try {
+    if (typeof require === 'function' && typeof require.context === 'function') {
+      const ctx = require.context('../assets/img', false, /\.(png|jpe?g|webp|gif)$/);
+      const entries = ctx.keys().map(k => [k.split('/').pop().toLowerCase(), ctx(k)]);
+      return Object.fromEntries(entries);
+    }
+  } catch (e) { /* no webpack context */ }
 
-const getImg = (filename) => imagesMap[filename.toLowerCase()] || imagesMap['placeholder.png'] || '';
+  // Fallback mínimo: nombres conocidos con rutas absolutas a public/data (todas corregidas)
+  return {
+    'manza_fuji.jpg': '/data/Manza_fuji.jpg',
+    'naranja.webp': '/data/naranja.webp',
+    'lechuga-hidroponica.jpeg': '/data/lechuga-hidroponica.jpeg',
+    'zanahoria.webp': '/data/zanahoria.webp',
+    'avena_integral.webp': '/data/Avena_integral.webp',
+    'miel_de_ulmo.webp': '/data/miel_de_ulmo.webp',
+    'leche_entera.webp': '/data/leche_entera.webp',
+    'queso_chanco.webp': '/data/queso_chanco.webp',
+    'platano.webp': '/data/platano.webp',
+    'tomates.webp': '/data/Tomates.webp',
+    'harina.webp': '/data/harina.webp',
+    'yogurt.webp': '/data/yogur.webp',  // Corregido para yogurt (sin extensión)
+    'placeholder.png': '/data/placeholder.png'
+  };
+})();
 
-// Datos de productos (usa getImg('nombreArchivo.ext') para la img)
+// Agrega función getImg si no existe (devuelve rutas absolutas)
+export const getImg = (filename) => {
+  const key = (filename || '').toLowerCase();
+  return imagesMap[key] || '/data/placeholder.png';  // Usa /data/ para public
+};
+
 export default [
   {
     codigo: "FR001",
@@ -17,7 +57,7 @@ export default [
     precio: 1490,
     origen: "Curicó",
     stock: 50,
-    img: getImg('Manza_fuji.jpg')
+    img: getImg('Manza_fuji.jpg')  // Ya correcto, asume archivo existe
   },
   {
     codigo: "FR002",
@@ -53,7 +93,7 @@ export default [
     precio: 1990,
     origen: "Chillán",
     stock: 30,
-    img: getImg('Avena_integral.webp')
+    img: getImg('Avena_integral.webp')  // Ya correcto, asume archivo existe
   },
   {
     codigo: "PO002",
@@ -98,7 +138,7 @@ export default [
     precio: 1490,
     origen: "Limache",
     stock: 55,
-    img: getImg('Tomates.webp')
+    img: getImg('Tomates.webp')  // Ya correcto, asume archivo existe
   },
   {
     codigo: "PO003",
@@ -116,6 +156,6 @@ export default [
     precio: 1990,
     origen: "Osorno",
     stock: 40,
-    img: getImg('yogurt.webp')
+    img: getImg('yogur')  // Corregido a 'yogur'
   }
 ];

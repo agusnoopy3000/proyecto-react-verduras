@@ -1,13 +1,9 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import React, { useEffect, useState } from "react";
+import { useNavigate, Link } from 'react-router-dom';
 
 export default function Login() {
-  const [email, setEmail] = useState("");
-  const [pass, setPass] = useState("");
-  const [msg, setMsg] = useState("");
+  const [form, setForm] = useState({ email: '', password: '' });
   const navigate = useNavigate();
-  const { login } = useAuth();
 
   useEffect(() => {
     const cur = 'login';
@@ -17,56 +13,48 @@ export default function Login() {
     });
   }, []);
 
-  const handleLogin = (e) => {
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = (e) => {
     e.preventDefault();
-    const res = login(email, pass);
-    if (res.ok) {
-      if (res.user.role === 'Administrador') {
-        alert('Bienvenido, administrador.');
-        navigate('/admin');
-      } else {
-        alert('Login exitoso');
-        navigate('/perfil');
-      }
+    // Verificar admin fijo
+    if (form.email === 'admin@huertohogar.cl' && form.password === 'admin123') {
+      localStorage.setItem('huertohogar_user', JSON.stringify({ email: form.email, rol: 'admin' }));
+      navigate('/admin');
+      return;
+    }
+    // Verificar contra usuarios registrados (asumiendo que Registro.jsx guarda en 'users' con campo 'password')
+    const users = JSON.parse(localStorage.getItem('users') || '[]');
+    const found = users.find(u => u.email === form.email && u.password === form.password);
+    if (found) {
+      localStorage.setItem('huertohogar_user', JSON.stringify(found));
+      navigate('/perfil');
     } else {
-      setMsg(res.message || 'Credenciales inválidas');
+      alert('Credenciales inválidas');
     }
   };
 
   return (
     <>
       <main className="container">
-        <section className="form">
+        <section>
           <h2>Ingresar</h2>
-          <label className="form-label" htmlFor="logEmail">Email</label>
-          <input id="logEmail" type="email" autoComplete="email" className="form-control" value={email} onChange={e => setEmail(e.target.value)} />
-          <label className="form-label" htmlFor="logPass">Contraseña</label>
-          <input id="logPass" type="password" autoComplete="current-password" className="form-control" required minLength={4} maxLength={10} value={pass} onChange={e => setPass(e.target.value)} />
-          <button className="btn btn-success mt-3" id="btnLogin" onClick={handleLogin}>Ingresar</button>
-          <p id="loginMsg" className="error" style={{color: msg ? 'var(--bs-danger)' : 'inherit'}}>{msg}</p>
+          <form onSubmit={handleSubmit}>
+            <div className="mb-3">
+              <label className="form-label">Email</label>
+              <input type="email" name="email" className="form-control" value={form.email} onChange={handleChange} required />
+            </div>
+            <div className="mb-3">
+              <label className="form-label">Contraseña</label>
+              <input type="password" name="password" className="form-control" value={form.password} onChange={handleChange} required />
+            </div>
+            <button type="submit" className="btn btn-primary">Ingresar</button>
+          </form>
+          <p><Link to="/registro">¿No tienes cuenta? Regístrate</Link></p>
         </section>
       </main>
-
-      <footer className="site">
-        <div className="container inner">
-          <div className="cols">
-            <div>
-              <strong>HuertoHogar</strong>
-              <p>Productos frescos y orgánicos. Calidad local.</p>
-            </div>
-            <div>
-              <p><strong>Tiendas</strong></p>
-              <p>Santiago · Puerto Montt · Villarrica · Nacimiento</p>
-              <p>Viña del Mar · Valparaíso · Concepción</p>
-            </div>
-            <div>
-              <p><strong>Contacto</strong></p>
-              <p>contacto@huertohogar.cl</p>
-            </div>
-          </div>
-          <div>© 2025 HuertoHogar · Sitio educativo</div>
-        </div>
-      </footer>
     </>
   );
 }

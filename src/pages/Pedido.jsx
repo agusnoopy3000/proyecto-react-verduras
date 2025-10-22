@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from 'react-router-dom';  // Agrega este import
+import { useCart } from "../context/CartContext";
+import productos from "../data/productos";
 import regionesYComunas from "../data/regiones_comunas";
 
 export default function Pedido() {
-  const navigate = useNavigate();
+  const { cart } = useCart();
   const [fecha, setFecha] = useState("");
   const [nombre, setNombre] = useState("");
   const [direccion, setDireccion] = useState("");
@@ -14,6 +16,7 @@ export default function Pedido() {
   const [comuna, setComuna] = useState("");
   const [errors, setErrors] = useState({});
   const [msg, setMsg] = useState("");
+  const navigate = useNavigate();  // Agrega esto
 
   useEffect(() => { window.scrollTo(0,0); }, []);
 
@@ -31,8 +34,20 @@ export default function Pedido() {
   const handleConfirm = (ev) => {
     ev?.preventDefault();
     if (!validar()) return;
+    // Validar que el carrito no esté vacío
+    if (!cart || Object.keys(cart).length === 0) {
+      setMsg("El carrito está vacío. Agrega productos antes de confirmar.");
+      return;
+    }
     try {
-      const cart = JSON.parse(localStorage.getItem("cart") || "[]");
+      const items = Object.entries(cart).map(([codigo, qty]) => {
+        const producto = productos.find(p => p.codigo === codigo);
+        return producto ? { ...producto, qty } : null;
+      }).filter(Boolean);
+      if (items.length === 0) {
+        setMsg("No se encontraron productos válidos en el carrito.");
+        return;
+      }
       const orderId = `ORD${Date.now()}`;
       const order = {
         id: orderId,
@@ -40,12 +55,10 @@ export default function Pedido() {
         entregaPreferida: fecha || null,
         customer: { nombre, direccion, email, tel, region, comuna },
         comentarios: comentarios || "",
-        items: Array.isArray(cart) ? cart : []
+        items
       };
       // guardar pedido
       localStorage.setItem("last_order", JSON.stringify(order));
-      // alternativa para compatibilidad con versiones antiguas
-      try { localStorage.setItem("pedidoConfirmado", JSON.stringify(order.items)); } catch {}
       // navegar a confirmación pasando orderId
       navigate("/confirmacion", { state: { orderId } });
     } catch (err) {

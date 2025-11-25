@@ -1,0 +1,27 @@
+{
+  "name": "huertohogar-react",
+  "version": "1.0.0",
+  "scripts": {
+    "test": "vitest",
+    "test:watch": "vitest --watch"
+  },
+  "devDependencies": {
+    "vitest": "^0.0.0"
+  }
+}
+
+import { defineConfig } from 'vitest/config';
+
+export default defineConfig({
+  test: {
+    environment: 'jsdom'
+  }
+});
+
+import { describe, it, expect } from 'vitest';
+
+describe('hello world test', () => {
+  it('should return hello world', () => {
+    expect('hello world').toBe('hello world');
+  });
+});

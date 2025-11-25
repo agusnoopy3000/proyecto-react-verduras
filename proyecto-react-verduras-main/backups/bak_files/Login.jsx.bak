@@ -1,0 +1,89 @@
+import React, { useState, useEffect } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+
+export default function Login() {
+  const [email, setEmail] = useState("");
+  const [pass, setPass] = useState("");
+  const [msg, setMsg] = useState("");
+  const navigate = useNavigate();
+  const { login } = useAuth();
+
+  useEffect(() => {
+    const cur = 'login';
+    document.querySelectorAll('nav a').forEach(a => {
+      const href = a.getAttribute('href') || '';
+      if (href.includes(cur)) a.classList.add('active');
+    });
+  }, []);
+
+  const handleLogin = (e) => {
+    e.preventDefault();
+    const res = login(email, pass);
+    if (res.ok) {
+      if (res.user.role === 'Administrador') {
+        alert('Bienvenido, administrador.');
+        navigate('/admin');
+      } else {
+        alert('Login exitoso');
+        navigate('/perfil');
+      }
+    } else {
+      setMsg(res.message || 'Credenciales inválidas');
+    }
+  };
+
+  return (
+    <>
+      <header className="site">
+        <div className="container nav">
+          <div className="brand">
+            <div className="logo" aria-hidden="true"></div>
+            <Link to="/">HuertoHogar</Link>
+          </div>
+          <nav className="navbar navbar-expand-lg">
+            <ul className="navbar-nav me-auto mb-2 mb-lg-0">
+              <li className="nav-item"><Link className="nav-link" to="/">Inicio</Link></li>
+              <li className="nav-item"><Link className="nav-link" to="/catalogo">Catálogo</Link></li>
+              <li className="nav-item"><Link className="nav-link" to="/carrito">Carrito</Link></li>
+              <li className="nav-item"><Link className="nav-link" to="/pedido">Pedido</Link></li>
+            </ul>
+          </nav>
+        </div>
+      </header>
+
+      <main className="container">
+        <section className="form">
+          <h2>Ingresar</h2>
+          <label className="form-label" htmlFor="logEmail">Email</label>
+          <input id="logEmail" type="email" autoComplete="email" className="form-control" value={email} onChange={e => setEmail(e.target.value)} />
+          <label className="form-label" htmlFor="logPass">Contraseña</label>
+          <input id="logPass" type="password" autoComplete="current-password" className="form-control" required minLength={4} maxLength={10} value={pass} onChange={e => setPass(e.target.value)} />
+          <button className="btn btn-success mt-3" id="btnLogin" onClick={handleLogin}>Ingresar</button>
+          <p id="loginMsg" className="error" style={{color: msg ? 'var(--bs-danger)' : 'inherit'}}>{msg}</p>
+        </section>
+      </main>
+
+      <footer className="site">
+        <div className="container inner">
+          <div className="cols">
+            <div>
+              <strong>HuertoHogar</strong>
+              <p>Productos frescos y orgánicos. Calidad local.</p>
+            </div>
+            <div>
+              <p><strong>Tiendas</strong></p>
+              <p>Santiago · Puerto Montt · Villarrica · Nacimiento</p>
+              <p>Viña del Mar · Valparaíso · Concepción</p>
+            </div>
+            <div>
+              <p><strong>Contacto</strong></p>
+              <p>contacto@huertohogar.cl</p>
+            </div>
+          </div>
+          <div>© 2025 HuertoHogar · Sitio educativo</div>
+        </div>
+      </footer>
+    </>
+  );
+}

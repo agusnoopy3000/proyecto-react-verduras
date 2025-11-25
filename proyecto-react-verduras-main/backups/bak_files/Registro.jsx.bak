@@ -1,0 +1,166 @@
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import regionesData from "../data/regiones_comunas";
+
+export default function Registro() {
+  const [nombre, setNombre] = useState("");
+  const [rut, setRut] = useState("");
+  const [email, setEmail] = useState("");
+  const [tel, setTel] = useState("");
+  const [pass, setPass] = useState("");
+  const [pass2, setPass2] = useState("");
+  const [regMsg, setRegMsg] = useState("");
+  const [region, setRegion] = useState("");
+  const [comuna, setComuna] = useState("");
+  const [comunasList, setComunasList] = useState([]);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const cur = 'registro';
+    document.querySelectorAll('nav a').forEach(a => {
+      const href = a.getAttribute('href') || '';
+      if (href.includes(cur)) a.classList.add('active');
+    });
+    // precargar regiones (opcional)
+    if (regionesData && regionesData.length) {
+      // dejamos la lista de comunas vacía hasta seleccionar
+    }
+  }, []);
+
+  function validarRun(rutInput) {
+    const run = (rutInput || '').toUpperCase();
+    if (!/^\d{7,8}[0-9K]$/.test(run)) return false;
+    const cuerpo = run.slice(0, -1);
+    const dv = run.slice(-1);
+    let suma = 0;
+    let multiplo = 2;
+    for (let i = cuerpo.length - 1; i >= 0; i--) {
+      suma += parseInt(cuerpo[i], 10) * multiplo;
+      multiplo = multiplo < 7 ? multiplo + 1 : 2;
+    }
+    let dvEsperado = 11 - (suma % 11);
+    dvEsperado = dvEsperado === 11 ? '0' : dvEsperado === 10 ? 'K' : dvEsperado.toString();
+    return dv === dvEsperado;
+  }
+
+  const handleRegistro = (e) => {
+    e?.preventDefault();
+    let msg = '';
+    if (nombre.trim().length < 3) msg = 'El nombre debe tener al menos 3 caracteres.';
+    else if (nombre.length > 100) msg = 'El nombre no puede superar 100 caracteres.';
+    else if (!rut || !/^\d{1,2}\.\d{3}\.\d{3}-[\dkK]$/.test(rut) || !validarRun(rut)) msg = 'RUT no válido.';
+    else if (email.length > 100) msg = 'El email no puede superar 100 caracteres.';
+    else if (!/^.+@(duoc\.cl|profesor\.duoc\.cl|gmail\.com)$/.test(email)) msg = 'Solo se permiten correos @duoc.cl, @profesor.duoc.cl o @gmail.com.';
+    else if (!/^\+?\d[\d\s-]{6,}$/.test(tel)) msg = 'Teléfono inválido.';
+    else if (pass.length < 4 || pass.length > 10) msg = 'La contraseña debe tener entre 4 y 10 caracteres.';
+    else if (pass !== pass2) msg = 'Las contraseñas no coinciden.';
+    else if (region && !comuna) msg = 'Si seleccionas región, debes seleccionar comuna.';
+
+    setRegMsg(msg);
+    if (!msg) {
+      alert('Registro exitoso');
+      navigate('/perfil');
+    }
+  };
+
+  return (
+    <>
+      <header className="site">
+        <div className="container nav">
+          <div className="brand">
+            <img src="/assets/img/huerto_hogar.jpeg" alt="Logo HuertoHogar" style={{width:36,height:36,objectFit:'cover',borderRadius:8,marginRight:8}} />
+            <a href="/">HuertoHogar</a>
+          </div>
+          <nav className="navbar navbar-expand-lg">
+            <ul className="navbar-nav me-auto mb-2 mb-lg-0">
+              <li className="nav-item"><a className="nav-link" href="/">Inicio</a></li>
+              <li className="nav-item"><a className="nav-link" href="/catalogo">Catálogo</a></li>
+              <li className="nav-item"><a className="nav-link" href="/carrito">Carrito</a></li>
+              <li className="nav-item"><a className="nav-link" href="/pedido">Pedido</a></li>
+              <li className="nav-item"><a className="nav-link" href="/nosotros">Nosotros</a></li>
+              <li className="nav-item"><a className="nav-link" href="/blog">Blog</a></li>
+              <li className="nav-item"><a className="nav-link" href="/contacto">Contacto</a></li>
+              <li className="nav-item"><a className="nav-link" href="/login">Ingresar</a></li>
+              <li className="nav-item"><a className="nav-link" href="/registro">Registro</a></li>
+              <li className="nav-item"><a className="nav-link" href="/perfil">Perfil</a></li>
+            </ul>
+          </nav>
+        </div>
+      </header>
+
+      <main className="container">
+        <section className="form">
+          <h2>Crear cuenta</h2>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16}}>
+            <div>
+              <label className="form-label" htmlFor="regNombre">Nombre</label>
+              <input id="regNombre" type="text" autoComplete="name" className="form-control" value={nombre} onChange={e => setNombre(e.target.value)} />
+
+              <label className="form-label" htmlFor="regRut">RUN</label>
+              <input id="regRut" type="text" autoComplete="off" className="form-control" required minLength={7} maxLength={9} placeholder="Ej: 19011022K" value={rut} onChange={e => setRut(e.target.value)} />
+
+              <label className="form-label" htmlFor="regEmail">Email</label>
+              <input id="regEmail" type="email" autoComplete="email" className="form-control" required value={email} onChange={e => setEmail(e.target.value)} />
+
+              <label className="form-label" htmlFor="regTel">Teléfono</label>
+              <input id="regTel" type="tel" autoComplete="tel" className="form-control" required pattern="\+?\d[\d\s-]{6,}" value={tel} onChange={e => setTel(e.target.value)} />
+
+              <label className="form-label" htmlFor="regRegion">Región</label>
+              <select id="regRegion" className="form-select" value={region} onChange={e => { const r = e.target.value; setRegion(r); const found = regionesData.find(x => x.region === r); setComunasList(found ? found.comunas : []); setComuna(''); }}>
+                <option value="">Seleccione región...</option>
+                {regionesData.map(r => <option key={r.region} value={r.region}>{r.region}</option>)}
+              </select>
+
+              <label className="form-label" htmlFor="regComuna">Comuna</label>
+              <select id="regComuna" className="form-select" value={comuna} onChange={e => setComuna(e.target.value)}>
+                <option value="">Seleccione comuna...</option>
+                {comunasList.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+
+              <label className="form-label" htmlFor="regPass">Contraseña</label>
+              <input id="regPass" type="password" autoComplete="new-password" className="form-control" required minLength={4} maxLength={10} value={pass} onChange={e => setPass(e.target.value)} />
+
+              <label className="form-label" htmlFor="regPass2">Repite contraseña</label>
+              <input id="regPass2" type="password" autoComplete="new-password" className="form-control" required minLength={4} maxLength={10} value={pass2} onChange={e => setPass2(e.target.value)} />
+
+              <div style={{height:12}} />
+              <button className="btn btn-success mt-3" id="btnRegistro" type="button" onClick={handleRegistro}>Registrarme</button>
+              <p id="regMsg" className="error" style={{color: regMsg ? 'var(--bs-danger)' : 'inherit'}}>{regMsg}</p>
+              <p className="help">Al registrarte aceptas términos del curso.</p>
+            </div>
+
+            <div>
+              <p><strong>Ventajas</strong></p>
+              <ul>
+                <li>Seguimiento de pedidos</li>
+                <li>Historial de compras</li>
+                <li>Ofertas personalizadas</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer className="site">
+        <div className="container inner">
+          <div className="cols">
+            <div>
+              <strong>HuertoHogar</strong>
+              <p>Productos frescos y orgánicos. Calidad local.</p>
+            </div>
+            <div>
+              <p><strong>Tiendas</strong></p>
+              <p>Santiago · Puerto Montt · Villarrica · Nacimiento</p>
+              <p>Viña del Mar · Valparaíso · Concepción</p>
+            </div>
+            <div>
+              <p><strong>Contacto</strong></p>
+              <p>contacto@huertohogar.cl</p>
+            </div>
+          </div>
+          <div>© 2025 HuertoHogar · Sitio educativo</div>
+        </div>
+      </footer>
+    </>
+  );
+}

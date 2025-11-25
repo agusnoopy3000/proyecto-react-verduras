@@ -1,0 +1,163 @@
+import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import productos from "../data/productos";
+
+export default function Confirmacion() {
+  const [lineas, setLineas] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    async function mostrarResumenPedido() {
+      try {
+        const cart = JSON.parse(localStorage.getItem('pedidoConfirmado') || '{}');
+        // Si no hay pedido, marcamos como cargado y salimos
+        if (!cart || Object.keys(cart).length === 0) {
+          setLineas([]);
+          setTotal(0);
+          setLoaded(true);
+          // eliminar para evitar doble render si recarga
+          localStorage.removeItem('pedidoConfirmado');
+          return;
+        }
+
+        // Usar el JSON importado en lugar de fetch
+        const listaProductos = productos;
+
+        let t = 0;
+        const rows = Object.entries(cart)
+          .map(([codigo, cantidad]) => {
+            const prod = listaProductos.find(p => p.codigo === codigo);
+            if (!prod) return null;
+            const subtotal = prod.precio * cantidad;
+            t += subtotal;
+            return {
+              codigo,
+              nombre: prod.nombre,
+              cantidad,
+              precio: prod.precio,
+              subtotal,
+            };
+          })
+          .filter(Boolean);
+
+        setLineas(rows);
+        setTotal(t);
+        setLoaded(true);
+
+        // Limpiar pedido confirmado para que no se repita si recarga
+        localStorage.removeItem('pedidoConfirmado');
+      } catch (err) {
+        console.error('Error cargando resumen de pedido:', err);
+        setLineas([]);
+        setTotal(0);
+        setLoaded(true);
+      }
+    }
+
+    mostrarResumenPedido();
+  }, []);
+
+  function formatoPrecio(n) {
+    return new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(n);
+  }
+
+  return (
+    <>
+      <style>{`
+        .like-icon {
+          font-size: 4rem;
+          color: #198754;
+          display: block;
+          margin: 24px auto 12px auto;
+          text-align: center;
+        }
+        .btn-outline-success {
+          background: none !important;
+        }
+      `}</style>
+
+      <header className="site">
+        <div className="container nav">
+          <div className="brand">
+            <div className="logo" aria-hidden="true"></div>
+            <Link to="/">HuertoHogar</Link>
+          </div>
+          <nav className="navbar navbar-expand-lg">
+            <ul className="navbar-nav me-auto mb-2 mb-lg-0">
+              <li className="nav-item"><Link className="nav-link" to="/">Inicio</Link></li>
+              <li className="nav-item"><Link className="nav-link" to="/catalogo">Catálogo</Link></li>
+              <li className="nav-item"><Link className="nav-link" to="/carrito">Carrito</Link></li>
+              <li className="nav-item"><Link className="nav-link" to="/pedido">Pedido</Link></li>
+            </ul>
+          </nav>
+        </div>
+      </header>
+
+      <main className="container my-4">
+        <section className="card p-4">
+          <div className="like-icon">👍</div>
+          <h2 className="text-center text-success">¡Compra confirmada!</h2>
+          <p className="text-center">Gracias por tu compra. Aquí tienes el resumen de tu pedido:</p>
+
+          {/* Resumen renderizado con React */}
+          <div id="resumenPedido">
+            {!loaded && <p>Cargando resumen...</p>}
+
+            {loaded && lineas.length === 0 && (
+              <p className="text-center">No se encontró un pedido confirmado.</p>
+            )}
+
+            {loaded && lineas.length > 0 && (
+              <div className="table-responsive">
+                <table className="table table-bordered mt-3">
+                  <thead>
+                    <tr>
+                      <th>Producto</th>
+                      <th>Cantidad</th>
+                      <th>Precio</th>
+                      <th>Subtotal</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {lineas.map((r) => (
+                      <tr key={r.codigo}>
+                        <td>{r.nombre}</td>
+                        <td>{r.cantidad}</td>
+                        <td>{formatoPrecio(r.precio)}</td>
+                        <td>{formatoPrecio(r.subtotal)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr>
+                      <th colSpan={3}>Total</th>
+                      <th>{formatoPrecio(total)}</th>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            )}
+
+          </div>
+
+          <div className="text-center mt-4">
+            <Link to="/catalogo" className="btn btn-outline-success">Seguir comprando</Link>
+          </div>
+        </section>
+      </main>
+
+      <footer className="site">
+        <div className="container inner">
+          <div className="cols">
+            <div>
+              <strong>HuertoHogar</strong>
+              <p>Productos frescos y orgánicos. Calidad local.</p>
+            </div>
+          </div>
+          <div>© 2025 HuertoHogar · Sitio educativo</div>
+        </div>
+      </footer>
+    </>
+  );
+}

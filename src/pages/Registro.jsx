@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, Link } from 'react-router-dom';
 import regionesData from "../data/regiones_comunas";
 import { useAuth } from '../context/AuthContext';
+import Modal from '../components/Modal';
 
 export default function Registro() {
   const [form, setForm] = useState({ run: '', nombre: '', apellidos: '', email: '', password: '', confirmPassword: '' });
@@ -10,6 +11,8 @@ export default function Registro() {
   const [comuna, setComuna] = useState("");
   const [comunasList, setComunasList] = useState([]);
   const [errors, setErrors] = useState({});
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [registeredEmail, setRegisteredEmail] = useState("");
   const navigate = useNavigate();
   const { register } = useAuth();
 
@@ -107,11 +110,16 @@ export default function Registro() {
 
     const res = await register(payload);
     if (res.ok) {
-      alert('Registro exitoso, ahora puedes iniciar sesión');
-      navigate('/login');
+      setRegisteredEmail(form.email);
+      setShowSuccessModal(true);
     } else {
       setRegMsg(res.message || 'Error al registrar usuario');
     }
+  };
+
+  const handleSuccessClose = () => {
+    setShowSuccessModal(false);
+    navigate('/login');
   };
 
   return (
@@ -171,6 +179,59 @@ export default function Registro() {
           <p><Link to="/login">¿Ya tienes cuenta? Ingresa</Link></p>
         </section>
       </main>
+
+      {/* Modal de registro exitoso */}
+      <Modal open={showSuccessModal} title="🎉 ¡Registro Exitoso!" onClose={handleSuccessClose}>
+        <div style={{ textAlign: 'center', padding: '20px 0' }}>
+          <div style={{ 
+            width: 80, 
+            height: 80, 
+            borderRadius: '50%', 
+            background: 'linear-gradient(135deg, #28a745, #20c997)', 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center',
+            margin: '0 auto 20px',
+            boxShadow: '0 4px 15px rgba(40, 167, 69, 0.3)'
+          }}>
+            <span style={{ fontSize: 40, color: '#fff' }}>✓</span>
+          </div>
+          
+          <h3 style={{ color: '#28a745', marginBottom: 12 }}>¡Bienvenido a HuertoHogar!</h3>
+          
+          <p style={{ color: '#666', marginBottom: 8 }}>
+            Tu cuenta ha sido creada correctamente.
+          </p>
+          
+          <p style={{ 
+            background: '#f8f9fa', 
+            padding: '12px 16px', 
+            borderRadius: 8, 
+            marginBottom: 20,
+            color: '#495057'
+          }}>
+            <strong>Email registrado:</strong><br />
+            <span style={{ color: '#28a745' }}>{registeredEmail}</span>
+          </p>
+          
+          <p style={{ color: '#666', fontSize: 14, marginBottom: 20 }}>
+            Ya puedes iniciar sesión con tus credenciales y comenzar a disfrutar de nuestros productos frescos.
+          </p>
+          
+          <button 
+            className="btn btn-success" 
+            onClick={handleSuccessClose}
+            style={{ 
+              padding: '12px 32px', 
+              fontSize: 16,
+              borderRadius: 8,
+              boxShadow: '0 2px 8px rgba(40, 167, 69, 0.3)'
+            }}
+          >
+            Ir a Iniciar Sesión
+          </button>
+        </div>
+      </Modal>
     </>
   );
 }

@@ -1,12 +1,17 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useCart } from "../context/CartContext";
+import { useAuth } from "../context/AuthContext";
 import productos from "../data/productos";
 import regionesYComunas from "../data/regiones_comunas";
 import api from '../api/client';
 
 export default function Pedido() {
   const { cart } = useCart();
+  const { isAuthenticated, user } = useAuth();
+  const navigate = useNavigate();
+  
+  // TODOS los hooks deben estar antes de cualquier return condicional
   const [fecha, setFecha] = useState("");
   const [nombre, setNombre] = useState("");
   const [direccion, setDireccion] = useState("");
@@ -17,9 +22,17 @@ export default function Pedido() {
   const [comuna, setComuna] = useState("");
   const [errors, setErrors] = useState({});
   const [msg, setMsg] = useState("");
-  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => { window.scrollTo(0,0); }, []);
+
+  // Pre-llenar datos del usuario autenticado
+  useEffect(() => {
+    if (user) {
+      if (user.nombre) setNombre(user.nombre + (user.apellido ? ' ' + user.apellido : ''));
+      if (user.email) setEmail(user.email);
+    }
+  }, [user]);
 
   const validar = () => {
     const e = {};
@@ -28,6 +41,8 @@ export default function Pedido() {
     if (!email.trim()) e.email = "Email requerido.";
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) e.email = "Email inválido.";
     if (!tel.trim()) e.tel = "Teléfono requerido.";
+    if (!region) e.region = "Región requerida.";
+    if (!comuna) e.comuna = "Comuna requerida.";
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -39,6 +54,17 @@ export default function Pedido() {
       setMsg("El carrito está vacío. Agrega productos antes de confirmar.");
       return;
     }
+    
+    // Verificar autenticación antes de enviar
+    const token = localStorage.getItem('hh_token');
+    if (!token) {
+      setMsg("Tu sesión ha expirado. Por favor, inicia sesión nuevamente.");
+      return;
+    }
+    
+    setLoading(true);
+    setMsg("");
+    
     try {
       const items = Object.entries(cart).map(([codigo, qty]) => ({
         productoId: codigo,
@@ -46,6 +72,7 @@ export default function Pedido() {
       }));
       if (items.length === 0) {
         setMsg("No se encontraron productos válidos en el carrito.");
+        setLoading(false);
         return;
       }
       const payload = {
@@ -56,13 +83,48 @@ export default function Pedido() {
         fechaEntrega: fecha || null,
         items,
       };
+      
+      console.log('Enviando pedido:', payload);
+      console.log('Token presente:', !!token);
+      
       const { data } = await api.post('/v1/orders', payload);
+      console.log('Respuesta del servidor:', data);
       navigate("/confirmacion", { state: { orderId: data.id } });
     } catch (err) {
       console.error("Error confirmando pedido:", err);
-      setMsg("Ocurrió un error. Intenta nuevamente.");
+      console.error("Response:", err.response?.data);
+      
+      if (err.response?.status === 401 || err.response?.status === 403) {
+        setMsg("Sesión expirada o no autorizada. Por favor, inicia sesión nuevamente.");
+      } else if (err.response?.data?.message) {
+        setMsg(err.response.data.message);
+      } else {
+        setMsg("Ocurrió un error al procesar tu pedido. Intenta nuevamente.");
+      }
+    } finally {
+      setLoading(false);
     }
   };
+
+  // Si no está autenticado, mostrar mensaje
+  if (!isAuthenticated) {
+    return (
+      <main className="container">
+        <section>
+          <h2>Realizar Pedido</h2>
+          <div className="alert alert-warning" style={{ padding: '20px', borderRadius: '8px', backgroundColor: '#fff3cd', border: '1px solid #ffc107' }}>
+            <p style={{ marginBottom: '10px' }}>
+              <strong>⚠️ Debes iniciar sesión para realizar un pedido.</strong>
+            </p>
+            <p>
+              <Link to="/login" className="btn btn-primary" style={{ marginRight: '10px' }}>Iniciar sesión</Link>
+              <Link to="/registro" className="btn btn-outline-secondary">Crear cuenta</Link>
+            </p>
+          </div>
+        </section>
+      </main>
+    );
+  }
 
   return (
     <main className="container">
@@ -106,6 +168,7 @@ export default function Pedido() {
                   <option key={r.region} value={r.region}>{r.region}</option>
                 ))}
               </select>
+              {errors.region && <div className="error">{errors.region}</div>}
             </div>
 
             <div className="col-12 col-md-6">
@@ -121,6 +184,7 @@ export default function Pedido() {
                   <option key={c} value={c}>{c}</option>
                 ))}
               </select>
+              {errors.comuna && <div className="error">{errors.comuna}</div>}
             </div>
 
             <label className="form-label">Comentarios</label>
@@ -128,8 +192,10 @@ export default function Pedido() {
 
             <div style={{height:12}} />
             <div style={{display:'flex',gap:8,justifyContent:'flex-end',marginTop:8}}>
-              <button type="button" className="btn ghost" onClick={()=>navigate("/catalogo")}>Volver al catálogo</button>
-              <button type="submit" className="btn btn-success">Confirmar pedido</button>
+              <button type="button" className="btn ghost" onClick={()=>navigate("/catalogo")} disabled={loading}>Volver al catálogo</button>
+              <button type="submit" className="btn btn-success" disabled={loading}>
+                {loading ? 'Procesando...' : 'Confirmar pedido'}
+              </button>
             </div>
 
             {msg && <p className="error" style={{marginTop:8}}>{msg}</p>}

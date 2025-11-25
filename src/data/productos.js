@@ -25,28 +25,28 @@ const imagesMap = (() => {
     }
   } catch (e) { /* no webpack context */ }
 
-  // Fallback mínimo: nombres conocidos con rutas relativas a public/data (para S3)
+  // Fallback mínimo: nombres conocidos con rutas absolutas a /data/ (para S3)
   return {
-    'manza_fuji.jpg': './data/Manza_fuji.jpg',
-    'naranja.webp': './data/naranja.webp',
-    'lechuga-hidroponica.jpeg': './data/lechuga-hidroponica.jpeg',
-    'zanahoria.webp': './data/zanahoria.webp',
-    'avena_integral.webp': './data/Avena_integral.webp',
-    'miel_de_ulmo.webp': './data/miel_de_ulmo.webp',
-    'leche_entera.webp': './data/leche_entera.webp',
-    'queso_chanco.webp': './data/queso_chanco.webp',
-    'platano.webp': './data/platano.webp',
-    'tomates.webp': './data/Tomates.webp',
-    'harina.webp': './data/harina.webp',
-    'yogurt.webp': './data/yogur.webp',  // Corregido para yogurt (sin extensión)
-    'placeholder.png': './data/placeholder.png'
+    'manza_fuji.jpg': '/data/Manza_fuji.jpg',
+    'naranja.webp': '/data/naranja.webp',
+    'lechuga-hidroponica.jpeg': '/data/lechuga-hidroponica.jpeg',
+    'zanahoria.webp': '/data/zanahoria.webp',
+    'avena_integral.webp': '/data/Avena_integral.webp',
+    'miel_de_ulmo.webp': '/data/miel_de_ulmo.webp',
+    'leche_entera.webp': '/data/leche_entera.webp',
+    'queso_chanco.webp': '/data/queso_chanco.webp',
+    'platano.webp': '/data/platano.webp',
+    'tomates.webp': '/data/Tomates.webp',
+    'harina.webp': '/data/harina.webp',
+    'yogurt.webp': '/data/yogurt.webp',
+    'placeholder.png': '/data/placeholder.png'
   };
 })();
 
-// Agrega función getImg si no existe (devuelve rutas relativas)
+// Agrega función getImg si no existe (devuelve rutas absolutas)
 export const getImg = (filename) => {
   const key = (filename || '').toLowerCase();
-  return imagesMap[key] || './data/placeholder.png';  // Usa ./data/ para S3
+  return imagesMap[key] || '/data/placeholder.png';
 };
 
 export default [
@@ -156,6 +156,6 @@ export default [
     precio: 1990,
     origen: "Osorno",
     stock: 40,
-    img: getImg('yogur')  // Corregido a 'yogur'
+    img: getImg('yogurt.webp')
   }
 ];

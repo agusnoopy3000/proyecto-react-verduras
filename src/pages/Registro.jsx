@@ -50,24 +50,28 @@ export default function Registro() {
     e.preventDefault();
     const newErrors = {};
 
-    // nombre
-    if (!form.nombre || form.nombre.trim().length < 3) newErrors.nombre = 'El nombre debe tener al menos 3 caracteres.';
+    // nombre - Requerido por backend
+    if (!form.nombre || form.nombre.trim().length < 2) newErrors.nombre = 'El nombre es obligatorio (mínimo 2 caracteres).';
     else if (form.nombre.length > 100) newErrors.nombre = 'El nombre no puede superar 100 caracteres.';
+
+    // apellidos - Requerido por backend (campo "apellidos", no "apellido")
+    if (!form.apellidos || form.apellidos.trim().length < 2) newErrors.apellidos = 'Los apellidos son obligatorios (mínimo 2 caracteres).';
+    else if (form.apellidos.length > 100) newErrors.apellidos = 'Los apellidos no pueden superar 100 caracteres.';
 
     // RUT: normalizamos y validamos con función
     const rutRaw = (form.run || '').toString().replace(/[\.\-\s]/g, '');
     if (!rutRaw) newErrors.run = 'El RUN es obligatorio.';
     else if (!/^\d{7,8}[\dKk]$/.test(rutRaw) || !validarRun(rutRaw)) newErrors.run = 'RUT no válido. Formato esperado: 19011022K o 19.011.022-K';
 
-    // email
+    // email - Requerido por backend, formato email válido
     if (!form.email) newErrors.email = 'El email es obligatorio.';
     else if (form.email.length > 100) newErrors.email = 'El email no puede superar 100 caracteres.';
-    else if (!/^.+@(duoc\.cl|profesor\.duoc\.cl|gmail\.com)$/.test(form.email)) newErrors.email = 'Solo se permiten correos @duoc.cl, @profesor.duoc.cl o @gmail.com.';
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) newErrors.email = 'Ingresa un email válido.';
 
-    // contraseña: mínimo 7 caracteres y al menos 1 carácter especial
+    // contraseña - Backend requiere mínimo 8 caracteres y al menos 1 carácter especial
     const specialCharRegex = /[^A-Za-z0-9]/;
     if (!form.password) newErrors.password = 'La contraseña es obligatoria.';
-    else if (form.password.length < 7) newErrors.password = 'La contraseña debe tener al menos 7 caracteres.';
+    else if (form.password.length < 8) newErrors.password = 'La contraseña debe tener al menos 8 caracteres.';
     else if (!specialCharRegex.test(form.password)) newErrors.password = 'La contraseña debe incluir al menos un carácter especial (ej: !@#$%).';
     else if (form.password.length > 100) newErrors.password = 'La contraseña es demasiado larga.';
 
@@ -129,6 +133,7 @@ export default function Registro() {
             <div className="mb-3">
               <label className="form-label">Apellidos</label>
               <input type="text" name="apellidos" className="form-control" value={form.apellidos} onChange={handleChange} required />
+              {errors.apellidos && <div className="error">{errors.apellidos}</div>}
             </div>
             <div className="mb-3">
               <label className="form-label">Email</label>

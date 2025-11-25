@@ -159,13 +159,54 @@ export default function Admin() {
       return;
     }
     try {
-      await api.put(`/v1/orders/${orderForm.id}/status`, { status: orderForm.status });
-      setOrders(prev => prev.map(o => (o.id === orderForm.id ? { ...o, status: orderForm.status } : o)));
-      toast.success('Estado de pedido actualizado');
-      setShowOrderModal(false);
+      // Intentar diferentes formatos que podría esperar el backend
+      let success = false;
+      
+      // Intento 1: PUT con body JSON
+      try {
+        await api.put(`/v1/orders/${orderForm.id}/status`, { status: orderForm.status });
+        success = true;
+      } catch (e1) {
+        console.log('PUT con body falló, intentando PATCH...', e1.response?.status);
+        
+        // Intento 2: PATCH con body JSON
+        try {
+          await api.patch(`/v1/orders/${orderForm.id}/status`, { status: orderForm.status });
+          success = true;
+        } catch (e2) {
+          console.log('PATCH falló, intentando PUT con query param...', e2.response?.status);
+          
+          // Intento 3: PUT con query parameter
+          try {
+            await api.put(`/v1/orders/${orderForm.id}/status?status=${orderForm.status}`);
+            success = true;
+          } catch (e3) {
+            console.log('PUT con query param falló, intentando PUT al pedido completo...', e3.response?.status);
+            
+            // Intento 4: PUT al pedido completo
+            try {
+              const currentOrder = orders.find(o => o.id === orderForm.id);
+              await api.put(`/v1/orders/${orderForm.id}`, { ...currentOrder, status: orderForm.status });
+              success = true;
+            } catch (e4) {
+              // Mostrar error detallado
+              const errorMsg = e4.response?.data?.message || e4.response?.statusText || e4.message;
+              const errorStatus = e4.response?.status;
+              throw new Error(`Error ${errorStatus}: ${errorMsg}`);
+            }
+          }
+        }
+      }
+      
+      if (success) {
+        setOrders(prev => prev.map(o => (o.id === orderForm.id ? { ...o, status: orderForm.status } : o)));
+        toast.success('Estado de pedido actualizado');
+        setShowOrderModal(false);
+      }
     } catch (err) {
       console.error('Error actualizando estado de pedido', err);
-      setMsg('No se pudo actualizar el estado.');
+      const errorDetail = err.response?.data?.message || err.message || 'Error desconocido';
+      setMsg(`No se pudo actualizar el estado. ${errorDetail}`);
     }
   };
 

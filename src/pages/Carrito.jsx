@@ -114,64 +114,248 @@ export default function Carrito() {
   const total = cart.reduce((s, p) => s + (Number(p.precio) || 0) * (Number(p.qty) || 1), 0);
 
   return (
-    <main className="container">
-      <h2>Carrito</h2>
+    <main className="container" style={{ padding: '40px 20px', maxWidth: 900 }}>
+      {/* Header */}
+      <div style={{ 
+        textAlign: 'center', 
+        marginBottom: 30,
+        background: 'linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%)',
+        padding: '30px 20px',
+        borderRadius: 16,
+        color: '#fff'
+      }}>
+        <h1 style={{ fontSize: '2rem', fontWeight: 700, marginBottom: 8 }}>
+          🛒 Tu Carrito
+        </h1>
+        <p style={{ opacity: 0.9, marginBottom: 0 }}>
+          {cart.length === 0 ? 'No tienes productos aún' : `${cart.length} producto${cart.length > 1 ? 's' : ''} en tu carrito`}
+        </p>
+      </div>
+
       {cart.length === 0 ? (
-        <p>Tu carrito está vacío.</p>
+        <div style={{ 
+          textAlign: 'center', 
+          padding: '60px 20px',
+          background: '#f8f9fa',
+          borderRadius: 16
+        }}>
+          <span style={{ fontSize: 64, display: 'block', marginBottom: 20 }}>🛒</span>
+          <h3 style={{ color: '#636e72', marginBottom: 16 }}>Tu carrito está vacío</h3>
+          <p style={{ color: '#999', marginBottom: 24 }}>
+            Explora nuestro catálogo y añade productos frescos.
+          </p>
+          <button 
+            className="btn btn-success btn-lg" 
+            onClick={() => navigate('/catalogo')}
+            style={{ padding: '12px 32px', borderRadius: 8 }}
+          >
+            🛍️ Ir al Catálogo
+          </button>
+        </div>
       ) : (
         <>
-          <div style={{ display: 'grid', gap: 12 }}>
+          <div style={{ display: 'grid', gap: 16 }}>
             {cart.map((p, i) => (
-              <div key={p.codigo || p.id || i} className="cart-row" style={{ display: 'flex', gap: 12, alignItems: 'center', border: '1px solid #eee', padding: 12, borderRadius: 8 }}>
-                {p.img ? <img src={p.img} alt={p.nombre || p.codigo} style={{ width: 96, height: 72, objectFit: 'cover', borderRadius: 6 }} /> :
-                  <div style={{ width: 96, height: 72, background: '#f0f0f0', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#888', fontSize: 12 }}>Sin imagen</div>}
-                <div style={{ flex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
-                  <div>
-                    <strong style={{ display: 'block' }}>{p.nombre ?? 'Producto'}</strong>
-                    <div style={{ fontSize: 13, color: '#666', marginTop: 4 }}>Precio unitario: {formatCLP(p.precio)}</div>
+              <div 
+                key={p.codigo || p.id || i} 
+                className="card" 
+                style={{ 
+                  border: 'none', 
+                  boxShadow: '0 2px 12px rgba(0,0,0,0.08)', 
+                  borderRadius: 12,
+                  overflow: 'hidden'
+                }}
+              >
+                <div style={{ display: 'flex', gap: 16, alignItems: 'center', padding: 16 }}>
+                  {/* Imagen */}
+                  {p.img ? (
+                    <img 
+                      src={p.img} 
+                      alt={p.nombre || p.codigo} 
+                      style={{ 
+                        width: 100, 
+                        height: 80, 
+                        objectFit: 'cover', 
+                        borderRadius: 10,
+                        flexShrink: 0
+                      }} 
+                    />
+                  ) : (
+                    <div style={{ 
+                      width: 100, 
+                      height: 80, 
+                      background: 'linear-gradient(135deg, #dfe6e9, #b2bec3)', 
+                      borderRadius: 10, 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'center', 
+                      color: '#636e72', 
+                      fontSize: 24,
+                      flexShrink: 0
+                    }}>
+                      🥬
+                    </div>
+                  )}
+                  
+                  {/* Info del producto */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <h5 style={{ 
+                      margin: 0, 
+                      color: '#2d3436', 
+                      fontWeight: 600,
+                      fontSize: 16 
+                    }}>
+                      {p.nombre ?? 'Producto'}
+                    </h5>
+                    <p style={{ 
+                      margin: '4px 0 0', 
+                      color: '#636e72', 
+                      fontSize: 14 
+                    }}>
+                      {formatCLP(p.precio)} c/u
+                    </p>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    {/* Controles de cantidad */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, border: '1px solid #ddd', borderRadius: 6, padding: '4px 8px' }}>
-                      <button 
-                        className="btn btn-sm btn-outline-secondary" 
-                        onClick={() => decrementQty(p.codigo)}
-                        style={{ width: 28, height: 28, padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                      >
-                        −
-                      </button>
-                      <span style={{ minWidth: 32, textAlign: 'center', fontWeight: 600 }}>{p.qty || 1}</span>
-                      <button 
-                        className="btn btn-sm btn-outline-secondary" 
-                        onClick={() => incrementQty(p.codigo)}
-                        style={{ width: 28, height: 28, padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                      >
-                        +
-                      </button>
-                    </div>
-                    {/* Subtotal */}
-                    <div style={{ textAlign: 'right', minWidth: 90 }}>
-                      <div style={{ fontWeight: 700, fontSize: 16 }}>{formatCLP((Number(p.precio) || 0) * (Number(p.qty) || 1))}</div>
-                    </div>
-                    {/* Botón eliminar */}
+
+                  {/* Controles de cantidad */}
+                  <div style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: 8,
+                    background: '#f8f9fa',
+                    borderRadius: 8,
+                    padding: '6px 12px'
+                  }}>
                     <button 
-                      className="btn btn-sm btn-outline-danger" 
-                      onClick={() => removeItem(p.codigo)}
-                      title="Eliminar del carrito"
-                      style={{ padding: '4px 8px' }}
+                      onClick={() => decrementQty(p.codigo)}
+                      style={{ 
+                        width: 36, 
+                        height: 36, 
+                        padding: 0, 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        justifyContent: 'center',
+                        background: '#dc3545',
+                        border: 'none',
+                        borderRadius: 8,
+                        color: '#fff',
+                        fontWeight: 700,
+                        fontSize: 20,
+                        cursor: 'pointer',
+                        transition: 'background 0.2s'
+                      }}
+                      title="Quitar uno"
                     >
-                      🗑️
+                      -
+                    </button>
+                    <span style={{ 
+                      minWidth: 40, 
+                      textAlign: 'center', 
+                      fontWeight: 700,
+                      fontSize: 18,
+                      color: '#2d3436'
+                    }}>
+                      {p.qty || 1}
+                    </span>
+                    <button 
+                      onClick={() => incrementQty(p.codigo)}
+                      style={{ 
+                        width: 36, 
+                        height: 36, 
+                        padding: 0, 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        justifyContent: 'center',
+                        background: '#28a745',
+                        border: 'none',
+                        borderRadius: 8,
+                        color: '#fff',
+                        fontWeight: 700,
+                        fontSize: 20,
+                        cursor: 'pointer',
+                        transition: 'background 0.2s'
+                      }}
+                      title="Agregar uno"
+                    >
+                      +
                     </button>
                   </div>
+
+                  {/* Subtotal */}
+                  <div style={{ 
+                    textAlign: 'right', 
+                    minWidth: 100,
+                    paddingLeft: 16
+                  }}>
+                    <div style={{ 
+                      fontWeight: 700, 
+                      fontSize: 18, 
+                      color: '#28a745' 
+                    }}>
+                      {formatCLP((Number(p.precio) || 0) * (Number(p.qty) || 1))}
+                    </div>
+                  </div>
+
+                  {/* Botón eliminar */}
+                  <button 
+                    className="btn" 
+                    onClick={() => removeItem(p.codigo)}
+                    title="Eliminar del carrito"
+                    style={{ 
+                      padding: 8,
+                      background: '#fee',
+                      border: 'none',
+                      borderRadius: 8,
+                      fontSize: 18,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    🗑️
+                  </button>
                 </div>
               </div>
             ))}
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 16 }}>
-            <div><strong>Total:</strong> {formatCLP(total)}</div>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button className="btn btn-outline-secondary" onClick={vaciar}>Vaciar</button>
-              <button className="btn btn-success" onClick={() => navigate("/pedido")}>Proceder a pedido</button>
+
+          {/* Resumen y acciones */}
+          <div className="card" style={{ 
+            marginTop: 24, 
+            border: 'none',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
+            borderRadius: 16,
+            overflow: 'hidden'
+          }}>
+            <div style={{ 
+              background: 'linear-gradient(135deg, #2d3436, #636e72)', 
+              padding: '20px 24px',
+              color: '#fff',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center'
+            }}>
+              <div>
+                <span style={{ opacity: 0.8 }}>Total a pagar</span>
+                <div style={{ fontSize: 28, fontWeight: 700 }}>{formatCLP(total)}</div>
+              </div>
+              <div style={{ display: 'flex', gap: 12 }}>
+                <button 
+                  className="btn btn-outline-light" 
+                  onClick={vaciar}
+                  style={{ padding: '10px 20px', borderRadius: 8 }}
+                >
+                  Vaciar
+                </button>
+                <button 
+                  className="btn btn-success btn-lg" 
+                  onClick={() => navigate("/pedido")}
+                  style={{ 
+                    padding: '10px 28px', 
+                    borderRadius: 8,
+                    boxShadow: '0 4px 15px rgba(40, 167, 69, 0.4)'
+                  }}
+                >
+                  Proceder al Pedido →
+                </button>
+              </div>
             </div>
           </div>
         </>

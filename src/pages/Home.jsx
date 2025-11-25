@@ -1,54 +1,235 @@
 import React, { useEffect } from "react";
 import { Link } from "react-router-dom";
+import videoSrc from "../assets/video/video.mp4";
 
 export default function Home() {
   useEffect(() => {
-    const cur = 'home';
-    document.querySelectorAll('nav a').forEach(a => {
-      const href = a.getAttribute('href') || '';
-      if (href.includes(cur)) a.classList.add('active');
-    });
+    window.scrollTo(0, 0);
   }, []);
 
   return (
     <>
-      <main className="container">
-        <section className="hero">
-          <div>
-            <h1>Del campo a tu hogar</h1>
-            <p>Frutas y verduras orgánicas. Productos lácteos y alimentos saludables. Compra simple y rápida.</p>
-            <div className="controls">
-              <Link className="btn btn-success" to="/catalogo">Ver catálogo</Link>
-              <Link className="btn btn-outline-success" to="/registro" style={{background: 'none'}}>Crear cuenta</Link>
+      <main className="container" style={{ maxWidth: 1200, padding: '40px 20px' }}>
+        {/* Hero Section */}
+        <section style={{ marginBottom: 60 }}>
+          <div style={{ 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', 
+            gap: 40, 
+            alignItems: 'center' 
+          }}>
+            {/* Columna izquierda - Texto */}
+            <div>
+              <h1 style={{ 
+                fontSize: '3rem', 
+                fontWeight: 700, 
+                color: '#2d3436',
+                marginBottom: 20,
+                lineHeight: 1.2
+              }}>
+                Del campo <span style={{ color: '#28a745' }}>a tu hogar</span>
+              </h1>
+              <p style={{ 
+                fontSize: 18, 
+                color: '#636e72', 
+                marginBottom: 32,
+                lineHeight: 1.7
+              }}>
+                Frutas y verduras orgánicas. Productos lácteos y alimentos saludables. 
+                Compra simple, rápida y directa del productor.
+              </p>
+              <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+                <Link 
+                  to="/catalogo"
+                  style={{ 
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    padding: '14px 32px', 
+                    fontSize: 16, 
+                    fontWeight: 600,
+                    borderRadius: 10,
+                    background: '#28a745',
+                    color: '#fff',
+                    textDecoration: 'none',
+                    boxShadow: '0 4px 15px rgba(40, 167, 69, 0.4)',
+                    transition: 'transform 0.2s, box-shadow 0.2s'
+                  }}
+                >
+                  🛒 Ver Catálogo
+                </Link>
+                <Link 
+                  to="/registro" 
+                  style={{ 
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    padding: '14px 32px', 
+                    fontSize: 16,
+                    fontWeight: 600, 
+                    borderRadius: 10,
+                    background: 'transparent',
+                    color: '#28a745',
+                    textDecoration: 'none',
+                    border: '2px solid #28a745',
+                    transition: 'background 0.2s, color 0.2s'
+                  }}
+                >
+                  Crear Cuenta
+                </Link>
+              </div>
             </div>
-          </div>
-          <div className="card shadow-sm p-3 mb-4" style={{maxWidth: '600px', margin: 'auto'}}>
-            <video controls poster="assets/img/huerto_hogar.jpeg" style={{width: '100%', borderRadius: '8px'}}>
-              <source src="assets/video/video.mp4" type="video/mp4" />
-              
-            </video>
-            <p className="help text-center">Video demostrativo del funcionamiento de HuertoHogar y Productos orgánicos</p>
+            
+            {/* Columna derecha - Video */}
+            <div style={{ 
+              background: '#fff',
+              padding: 20, 
+              borderRadius: 20, 
+              boxShadow: '0 10px 40px rgba(0,0,0,0.1)'
+            }}>
+              <video 
+                controls 
+                style={{ 
+                  width: '100%', 
+                  borderRadius: 12,
+                  aspectRatio: '16/9',
+                  objectFit: 'cover',
+                  background: '#000'
+                }}
+              >
+                <source src={videoSrc} type="video/mp4" />
+                Tu navegador no soporta el elemento de video.
+              </video>
+              <p style={{ 
+                textAlign: 'center', 
+                color: '#666', 
+                fontSize: 14, 
+                marginTop: 16,
+                marginBottom: 0
+              }}>
+                🎬 Video demostrativo de HuertoHogar
+              </p>
+            </div>
           </div>
         </section>
 
-        <section className="category-descriptions mb-4" style={{background: '#f8f9fa', paddingTop: '1.5rem', paddingBottom: '0.5rem'}}>
+        <section className="category-descriptions" style={{ 
+          background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)', 
+          padding: '50px 0',
+          marginTop: 40,
+          borderRadius: 20
+        }}>
           <div className="container">
-            <h2 className="mb-3">Categorías y Descripciones</h2>
-            <div className="mb-3">
-              <h4>Frutas Frescas</h4>
-              <p>Nuestra selección de frutas frescas ofrece una experiencia directa del campo a tu hogar. Estas frutas se cultivan y cosechan en el punto óptimo de madurez para asegurar su sabor y frescura. Disfruta de una variedad de frutas de temporada que aportan vitaminas y nutrientes esenciales a tu dieta diaria. Perfectas para consumir solas, en ensaladas o como ingrediente principal en postres y smoothies.</p>
-            </div>
-            <div className="mb-3">
-              <h4>Verduras Orgánicas</h4>
-              <p>Descubre nuestra gama de verduras orgánicas, cultivadas sin el uso de pesticidas ni químicos, garantizando un sabor auténtico y natural. Cada verdura es seleccionada por su calidad y valor nutricional, ofreciendo una excelente fuente de vitaminas, minerales y fibra. Ideales para ensaladas, guisos y platos saludables, nuestras verduras orgánicas promueven una alimentación consciente y sostenible.</p>
-            </div>
-            <div className="mb-3">
-              <h4>Productos Orgánicos</h4>
-              <p>Nuestros productos orgánicos están elaborados con ingredientes naturales y procesados de manera responsable para mantener sus beneficios saludables. Desde aceites y miel hasta granos y semillas, ofrecemos una selección que apoya un estilo de vida saludable y respetuoso con el medio ambiente. Estos productos son perfectos para quienes buscan opciones alimenticias que aporten bienestar sin comprometer el sabor ni la calidad.</p>
-            </div>
-            <div className="mb-3">
-              <h4>Productos Lácteos</h4>
-              <p>Los productos lácteos de HuertoHogar provienen de granjas locales que se dedican a la producción responsable y de calidad. Ofrecemos una gama de leches, yogures y otros derivados que conservan su frescura y sabor auténtico. Ricos en calcio y nutrientes esenciales, nuestros lácteos son perfectos para complementar una dieta equilibrada, proporcionando el mejor sabor y nutrición para toda la familia.</p>
+            <h2 style={{ 
+              textAlign: 'center', 
+              marginBottom: 40, 
+              color: '#2d3436',
+              fontSize: '2rem',
+              fontWeight: 700
+            }}>
+              🌿 Nuestras Categorías
+            </h2>
+            
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', 
+              gap: 24 
+            }}>
+              {/* Frutas Frescas */}
+              <div className="card" style={{ 
+                border: 'none', 
+                borderRadius: 16, 
+                overflow: 'hidden',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                transition: 'transform 0.3s, box-shadow 0.3s'
+              }}>
+                <div style={{ 
+                  background: 'linear-gradient(135deg, #ff6b6b, #ee5a24)', 
+                  padding: 20,
+                  textAlign: 'center'
+                }}>
+                  <span style={{ fontSize: 48 }}>🍎</span>
+                </div>
+                <div style={{ padding: 20 }}>
+                  <h4 style={{ color: '#2d3436', marginBottom: 12 }}>Frutas Frescas</h4>
+                  <p style={{ color: '#636e72', fontSize: 14, lineHeight: 1.6, marginBottom: 0 }}>
+                    Frutas cultivadas y cosechadas en su punto óptimo de madurez. 
+                    Vitaminas y nutrientes esenciales directamente del campo a tu mesa.
+                  </p>
+                </div>
+              </div>
+
+              {/* Verduras Orgánicas */}
+              <div className="card" style={{ 
+                border: 'none', 
+                borderRadius: 16, 
+                overflow: 'hidden',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                transition: 'transform 0.3s, box-shadow 0.3s'
+              }}>
+                <div style={{ 
+                  background: 'linear-gradient(135deg, #00b894, #00a86b)', 
+                  padding: 20,
+                  textAlign: 'center'
+                }}>
+                  <span style={{ fontSize: 48 }}>🥬</span>
+                </div>
+                <div style={{ padding: 20 }}>
+                  <h4 style={{ color: '#2d3436', marginBottom: 12 }}>Verduras Orgánicas</h4>
+                  <p style={{ color: '#636e72', fontSize: 14, lineHeight: 1.6, marginBottom: 0 }}>
+                    Sin pesticidas ni químicos, con sabor auténtico y natural. 
+                    Excelente fuente de vitaminas, minerales y fibra.
+                  </p>
+                </div>
+              </div>
+
+              {/* Productos Orgánicos */}
+              <div className="card" style={{ 
+                border: 'none', 
+                borderRadius: 16, 
+                overflow: 'hidden',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                transition: 'transform 0.3s, box-shadow 0.3s'
+              }}>
+                <div style={{ 
+                  background: 'linear-gradient(135deg, #fdcb6e, #f39c12)', 
+                  padding: 20,
+                  textAlign: 'center'
+                }}>
+                  <span style={{ fontSize: 48 }}>🍯</span>
+                </div>
+                <div style={{ padding: 20 }}>
+                  <h4 style={{ color: '#2d3436', marginBottom: 12 }}>Productos Orgánicos</h4>
+                  <p style={{ color: '#636e72', fontSize: 14, lineHeight: 1.6, marginBottom: 0 }}>
+                    Aceites, miel, granos y semillas elaborados con ingredientes naturales. 
+                    Bienestar sin comprometer el sabor.
+                  </p>
+                </div>
+              </div>
+
+              {/* Productos Lácteos */}
+              <div className="card" style={{ 
+                border: 'none', 
+                borderRadius: 16, 
+                overflow: 'hidden',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                transition: 'transform 0.3s, box-shadow 0.3s'
+              }}>
+                <div style={{ 
+                  background: 'linear-gradient(135deg, #74b9ff, #0984e3)', 
+                  padding: 20,
+                  textAlign: 'center'
+                }}>
+                  <span style={{ fontSize: 48 }}>🥛</span>
+                </div>
+                <div style={{ padding: 20 }}>
+                  <h4 style={{ color: '#2d3436', marginBottom: 12 }}>Productos Lácteos</h4>
+                  <p style={{ color: '#636e72', fontSize: 14, lineHeight: 1.6, marginBottom: 0 }}>
+                    Leches, yogures y derivados de granjas locales responsables. 
+                    Ricos en calcio y nutrientes para toda la familia.
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </section>

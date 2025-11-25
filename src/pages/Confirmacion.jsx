@@ -62,7 +62,13 @@ export default function Confirmacion() {
     );
   }
 
-  const total = (order.items || []).reduce((s, it) => s + (Number(it.precio) || 0) * (Number(it.qty || it.cantidad) || 1), 0);
+  // El backend devuelve 'total' calculado, o calculamos desde items
+  const total = order.total || (order.items || []).reduce((s, it) => {
+    const precio = Number(it.precioUnitario || it.precio) || 0;
+    const cantidad = Number(it.cantidad || it.qty) || 1;
+    return s + (precio * cantidad);
+  }, 0);
+  
   const formatCLP = (v) => {
     try {
       return new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(Math.round(Number(v) || 0));
@@ -82,7 +88,7 @@ export default function Confirmacion() {
           {(order.comuna || order.customer?.comuna) && <p><strong>Comuna:</strong> {order.comuna || order.customer?.comuna}</p>}
           {order.fechaEntrega && <p><strong>Fecha preferida:</strong> {order.fechaEntrega}</p>}
           {order.comentarios && <p><strong>Comentarios:</strong> {order.comentarios}</p>}
-          {order.status && <p><strong>Estado:</strong> {order.status}</p>}
+          {(order.estado || order.status) && <p><strong>Estado:</strong> {order.estado || order.status}</p>}
         </section>
 
         <section style={{marginTop:12}}>
@@ -93,11 +99,17 @@ export default function Confirmacion() {
               {(order.items || []).map((it, i) => (
                 <tr key={it.codigo || it.productoId || it.id || i}>
                   <td>{it.nombre || it.productoId || it.codigo || it.id}</td>
-                  <td>{it.qty || it.cantidad || 1}</td>
-                  <td>{formatCLP((it.precio || 0) * (it.qty || it.cantidad || 1))}</td>
+                  <td>{it.cantidad || it.qty || 1}</td>
+                  <td>{formatCLP((it.precioUnitario || it.precio || 0) * (it.cantidad || it.qty || 1))}</td>
                 </tr>
               ))}
             </tbody>
+            <tfoot>
+              <tr>
+                <td colSpan="2"><strong>Total</strong></td>
+                <td><strong>{formatCLP(total)}</strong></td>
+              </tr>
+            </tfoot>
           </table>
         </section>
 

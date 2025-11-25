@@ -57,7 +57,7 @@ export default function Perfil() {
                 <p className="card-text">
                   <strong>RUN:</strong> {profile?.run || 'No especificado'}<br />
                   <strong>Nombre:</strong> {profile?.nombre || 'No especificado'}<br />
-                  <strong>Apellidos:</strong> {profile?.apellidos || 'No especificado'}<br />
+                  <strong>Apellidos:</strong> {profile?.apellidos || profile?.apellido || 'No especificado'}<br />
                   <strong>Email:</strong> {profile?.email || user?.email}
                 </p>
               </div>

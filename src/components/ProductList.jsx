@@ -2,7 +2,32 @@ import React, { useEffect, useState } from "react";
 import ProductCard from "./ProductCard";
 import { useCart } from "../context/CartContext";
 import api from "../api/client";
-import productosData from "../data/productos";
+import productosData, { getImg } from "../data/productos";
+
+// Mapa de código de producto a imagen
+const imagesByCodigo = {
+  'FR001': '/data/Manza_fuji.jpg',
+  'FR002': '/data/naranja.webp',
+  'FR003': '/data/platano.webp',
+  'VR001': '/data/lechuga-hidroponica.jpeg',
+  'VR002': '/data/zanahoria.webp',
+  'VR003': '/data/Tomates.webp',
+  'PO001': '/data/Avena_integral.webp',
+  'PO002': '/data/miel_de_ulmo.webp',
+  'PO003': '/data/harina.webp',
+  'PL001': '/data/leche_entera.webp',
+  'PL002': '/data/queso_chanco.webp',
+  'PL003': '/data/yogurt.webp',
+};
+
+// Función para asignar imagen a producto del backend
+const enrichWithImage = (producto) => {
+  if (producto.img && producto.img.startsWith('/data/')) {
+    return producto; // Ya tiene imagen correcta
+  }
+  const imgPath = imagesByCodigo[producto.codigo] || '/data/placeholder.png';
+  return { ...producto, img: imgPath };
+};
 
 export default function ProductList() {
   const [productos, setProductos] = useState([]);
@@ -15,7 +40,9 @@ export default function ProductList() {
     (async () => {
       try {
         const { data } = await api.get('/v1/products');
-        setProductos(data);
+        // Enriquecer productos del backend con imágenes locales
+        const enriched = data.map(enrichWithImage);
+        setProductos(enriched);
       } catch (err) {
         console.error('Error cargando productos del backend, usando datos locales:', err);
         setProductos(productosData);

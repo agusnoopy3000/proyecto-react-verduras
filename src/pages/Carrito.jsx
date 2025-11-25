@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../api/client';
 
 export default function Carrito() {
-  const { cart: cartObj, removeFromCart, clearCart } = useCart();
+  const { cart: cartObj, removeFromCart, clearCart, setItemQuantity } = useCart();
   const [cart, setCart] = useState([]);
   const [productos, setProductos] = useState([]);
   const navigate = useNavigate();
@@ -88,6 +88,25 @@ export default function Carrito() {
     removeFromCart(codigo);
   };
 
+  const incrementQty = (codigo) => {
+    const item = cart.find(p => p.codigo === codigo);
+    if (item) {
+      setItemQuantity(codigo, (item.qty || 1) + 1);
+    }
+  };
+
+  const decrementQty = (codigo) => {
+    const item = cart.find(p => p.codigo === codigo);
+    if (item) {
+      const newQty = (item.qty || 1) - 1;
+      if (newQty <= 0) {
+        removeFromCart(codigo);
+      } else {
+        setItemQuantity(codigo, newQty);
+      }
+    }
+  };
+
   const vaciar = () => {
     clearCart();
   };
@@ -106,15 +125,43 @@ export default function Carrito() {
               <div key={p.codigo || p.id || i} className="cart-row" style={{ display: 'flex', gap: 12, alignItems: 'center', border: '1px solid #eee', padding: 12, borderRadius: 8 }}>
                 {p.img ? <img src={p.img} alt={p.nombre || p.codigo} style={{ width: 96, height: 72, objectFit: 'cover', borderRadius: 6 }} /> :
                   <div style={{ width: 96, height: 72, background: '#f0f0f0', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#888', fontSize: 12 }}>Sin imagen</div>}
-                <div style={{ flex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ flex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
                   <div>
                     <strong style={{ display: 'block' }}>{p.nombre ?? 'Producto'}</strong>
-                    <div style={{ fontSize: 13, color: '#666', marginTop: 6 }}>Stock: {p.stock ?? '—'}</div>
+                    <div style={{ fontSize: 13, color: '#666', marginTop: 4 }}>Precio unitario: {formatCLP(p.precio)}</div>
                   </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontWeight: 700 }}>{formatCLP((Number(p.precio) || 0) * (Number(p.qty) || 1))}</div>
-                    <div style={{ fontSize: 12, color: '#999' }}>{formatCLP(p.precio)}{p.qty && p.qty > 1 ? ` x ${p.qty}` : ''}</div>
-                    <button className="btn btn-sm btn-outline-danger" onClick={() => removeItem(p.codigo)} style={{ marginTop: 8 }}>Eliminar</button>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    {/* Controles de cantidad */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, border: '1px solid #ddd', borderRadius: 6, padding: '4px 8px' }}>
+                      <button 
+                        className="btn btn-sm btn-outline-secondary" 
+                        onClick={() => decrementQty(p.codigo)}
+                        style={{ width: 28, height: 28, padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                      >
+                        −
+                      </button>
+                      <span style={{ minWidth: 32, textAlign: 'center', fontWeight: 600 }}>{p.qty || 1}</span>
+                      <button 
+                        className="btn btn-sm btn-outline-secondary" 
+                        onClick={() => incrementQty(p.codigo)}
+                        style={{ width: 28, height: 28, padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                      >
+                        +
+                      </button>
+                    </div>
+                    {/* Subtotal */}
+                    <div style={{ textAlign: 'right', minWidth: 90 }}>
+                      <div style={{ fontWeight: 700, fontSize: 16 }}>{formatCLP((Number(p.precio) || 0) * (Number(p.qty) || 1))}</div>
+                    </div>
+                    {/* Botón eliminar */}
+                    <button 
+                      className="btn btn-sm btn-outline-danger" 
+                      onClick={() => removeItem(p.codigo)}
+                      title="Eliminar del carrito"
+                      style={{ padding: '4px 8px' }}
+                    >
+                      🗑️
+                    </button>
                   </div>
                 </div>
               </div>

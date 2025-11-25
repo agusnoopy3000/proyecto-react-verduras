@@ -49,7 +49,11 @@ export default function Admin() {
   const loadProducts = async () => {
     try {
       const { data } = await api.get('/v1/products');
-      setProducts(data);
+      // Filtrar solo productos válidos (que tengan codigo o nombre de producto)
+      const filteredProducts = (Array.isArray(data) ? data : []).filter(item => 
+        item && (item.codigo || item.precio !== undefined) && !item.email
+      );
+      setProducts(filteredProducts);
     } catch (err) {
       console.error('Error cargando productos', err);
       setProducts(Array.isArray(productosDefault) ? productosDefault : []);

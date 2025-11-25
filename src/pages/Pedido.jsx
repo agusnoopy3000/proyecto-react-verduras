@@ -43,6 +43,17 @@ export default function Pedido() {
     if (!tel.trim()) e.tel = "Teléfono requerido.";
     if (!region) e.region = "Región requerida.";
     if (!comuna) e.comuna = "Comuna requerida.";
+    // Validar fecha - debe ser una fecha futura
+    if (!fecha) {
+      e.fecha = "Fecha de entrega requerida.";
+    } else {
+      const selectedDate = new Date(fecha);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (selectedDate <= today) {
+        e.fecha = "La fecha debe ser a partir de mañana.";
+      }
+    }
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -76,11 +87,11 @@ export default function Pedido() {
         return;
       }
       const payload = {
-        direccionEntrega: direccion,
-        region,
-        comuna,
-        comentarios,
-        fechaEntrega: fecha || null,
+        direccionEntrega: direccion.trim(),
+        region: region,
+        comuna: comuna,
+        comentarios: comentarios.trim() || "",
+        fechaEntrega: fecha, // formato YYYY-MM-DD del input date
         items,
       };
       
@@ -140,11 +151,18 @@ export default function Pedido() {
         <div style={{height:24}} />
         <form onSubmit={handleConfirm} style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16}}>
           <div>
-            <label className="form-label">Fecha preferida de entrega</label>
-            <input type="date" className="form-control" value={fecha} onChange={e=>setFecha(e.target.value)} />
+            <label className="form-label">Fecha preferida de entrega *</label>
+            <input 
+              type="date" 
+              className="form-control" 
+              value={fecha} 
+              onChange={e=>setFecha(e.target.value)} 
+              min={new Date(Date.now() + 86400000).toISOString().split('T')[0]}
+            />
+            {errors.fecha && <div className="error">{errors.fecha}</div>}
             <p className="help">Selecciona cualquier día a partir de mañana.</p>
 
-            <label className="form-label">Nombre</label>
+            <label className="form-label">Nombre *</label>
             <input className="form-control" value={nombre} onChange={e=>setNombre(e.target.value)} />
             {errors.nombre && <div className="error">{errors.nombre}</div>}
 

@@ -26,7 +26,14 @@ export function AuthProvider({ children }) {
   async function login(email, password) {
     try {
       const { data } = await api.post('/v1/auth/login', { email, password });
-      const authUser = { email: data.email, role: data.role };
+      // Backend devuelve: { token, user: { email, nombre, apellido, rol, ... } }
+      const role = data.user?.rol || data.role || 'USER';
+      const authUser = { 
+        email: data.user?.email || data.email || email, 
+        role: role.toUpperCase(),
+        nombre: data.user?.nombre,
+        apellido: data.user?.apellido
+      };
       localStorage.setItem(TOKEN_KEY, data.token);
       setUser(authUser);
       return { ok: true, user: authUser };

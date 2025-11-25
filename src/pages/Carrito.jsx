@@ -46,7 +46,8 @@ export default function Carrito() {
 
     const nombre = base?.nombre && String(base.nombre).trim() && !/^\d+$/.test(String(base.nombre)) ? base.nombre : (found?.nombre ?? found?.title ?? code ?? "Producto");
     const precio = Number(base?.precio ?? base?.price ?? found?.precio ?? found?.price ?? 0) || 0;
-    const imgRaw = (base?.img ?? base?.image) ?? (found?.img ?? found?.image) ?? null;
+    // Backend usa 'imagen', frontend usa 'img'
+    const imgRaw = (base?.img ?? base?.imagen ?? base?.image) ?? (found?.img ?? found?.imagen ?? found?.image) ?? null;
     const img = typeof imgRaw === "string" && imgRaw.trim().length ? imgRaw : null;
     const stock = base?.stock ?? found?.stock ?? null;
     const id = base?.id ?? found?.id ?? undefined;

@@ -27,27 +27,25 @@ export default function App() {
   return (
     <CartProvider>
       <Header />
-      <main className="container mt-4">
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/catalogo" element={<Catalogo />} />
-          <Route path="/catalog" element={<Catalog />} />
-          <Route path="/carrito" element={<Carrito />} />
-          <Route path="/pedido" element={<Pedido />} />
-          <Route path="/confirmacion" element={<Confirmacion />} />
-          <Route path="/registro" element={<Registro />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/perfil" element={<Perfil />} />
-          <Route path="/admin" element={<Admin />} />
-          <Route path="/contacto" element={<Contacto />} />
-          <Route path="/nosotros" element={<Nosotros />} />
-          <Route path="/blog" element={<Blog />} />
-          <Route path="/ofertas" element={<Offers />} />
-          <Route path="/checkout" element={<Checkout />} />
-          <Route path="/exito" element={<Success />} />
-          <Route path="/error-pago" element={<ErrorPayment />} />
-        </Routes>
-      </main>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/catalogo" element={<Catalogo />} />
+        <Route path="/catalog" element={<Catalog />} />
+        <Route path="/carrito" element={<Carrito />} />
+        <Route path="/pedido" element={<Pedido />} />
+        <Route path="/confirmacion" element={<Confirmacion />} />
+        <Route path="/registro" element={<Registro />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/perfil" element={<Perfil />} />
+        <Route path="/admin" element={<Admin />} />
+        <Route path="/contacto" element={<Contacto />} />
+        <Route path="/nosotros" element={<Nosotros />} />
+        <Route path="/blog" element={<Blog />} />
+        <Route path="/ofertas" element={<Offers />} />
+        <Route path="/checkout" element={<Checkout />} />
+        <Route path="/exito" element={<Success />} />
+        <Route path="/error-pago" element={<ErrorPayment />} />
+      </Routes>
       <ToastContainer position="top-right" autoClose={3000} />
       <Footer />
     </CartProvider>

@@ -29,15 +29,20 @@ export default function ProductCard({ producto, onAdd }) {
   return (
     <div className="card">
       <img
-        src={producto.img || ""}
+        src={producto.img || producto.imagen || ""}
         alt={producto.nombre}
         style={{ width: "100%", height: 160, objectFit: "cover", borderRadius: 12 }}
       />
       <div style={{ paddingTop: 10 }}>
         <h3>{producto.nombre}</h3>
-        <p className="price">${producto.precio}</p>
-        <p><strong>Origen:</strong> {producto.origen}</p>
-        <p><strong>Stock:</strong> {producto.stock}</p>
+        <p className="price">${producto.precio?.toLocaleString('es-CL') || producto.precio}</p>
+        {producto.descripcion && (
+          <p className="descripcion" style={{ fontSize: '0.9rem', color: '#666', marginBottom: 8 }}>
+            {producto.descripcion}
+          </p>
+        )}
+        <p><strong>Origen:</strong> {producto.origen || 'No especificado'}</p>
+        <p><strong>Stock:</strong> {producto.stock ?? 'Disponible'}</p>
         <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
           <button
             className="btn btn-success"

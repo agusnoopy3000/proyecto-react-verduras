@@ -5,13 +5,10 @@ export default function Contacto() {
   const [email, setEmail] = useState("");
   const [msj, setMsj] = useState("");
   const [conMsg, setConMsg] = useState("");
+  const [success, setSuccess] = useState(false);
 
   useEffect(() => {
-    const cur = 'contacto';
-    document.querySelectorAll('nav a').forEach(a => {
-      const href = a.getAttribute('href') || '';
-      if (href.includes(cur)) a.classList.add('active');
-    });
+    window.scrollTo(0, 0);
   }, []);
 
   const validateAndSend = (e) => {
@@ -19,16 +16,18 @@ export default function Contacto() {
     let msg = '';
     if (!nombre.trim()) msg = 'El nombre es requerido.';
     else if (nombre.length > 100) msg = 'El nombre no puede superar 100 caracteres.';
-    else if (email.length > 100) msg = 'El email no puede superar 100 caracteres.';
-    else if (!/^.+@(duoc\.cl|profesor\.duoc\.cl|gmail\.com)$/.test(email)) msg = 'Solo se permiten correos @duoc.cl, @profesor.duoc.cl o @gmail.com.';
+    else if (!email.trim()) msg = 'El email es requerido.';
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) msg = 'Email inválido.';
-    else if (!msj.trim()) msg = 'El comentario es requerido.';
-    else if (msj.length > 500) msg = 'El comentario no puede superar 500 caracteres.';
+    else if (!msj.trim()) msg = 'El mensaje es requerido.';
+    else if (msj.length > 500) msg = 'El mensaje no puede superar 500 caracteres.';
 
     setConMsg(msg);
+    setSuccess(false);
+    
     if (!msg) {
-      // Aquí podrías enviar a una API. Por ahora solo confirmamos.
-      alert('Mensaje enviado correctamente.');
+      // Simulación de envío exitoso
+      setSuccess(true);
+      setConMsg('¡Mensaje enviado correctamente! Te responderemos pronto.');
       setNombre('');
       setEmail('');
       setMsj('');
@@ -36,49 +35,49 @@ export default function Contacto() {
   };
 
   return (
-    <>
-      <main className="container">
-        <section>
-          <h2>Contacto</h2>
-          <p>Envíanos un mensaje o visita nuestras tiendas.</p>
-          <form>
-            <div className="mb-3">
-              <label className="form-label">Nombre</label>
-              <input type="text" className="form-control" />
-            </div>
-            <div className="mb-3">
-              <label className="form-label">Email</label>
-              <input type="email" className="form-control" />
-            </div>
-            <div className="mb-3">
-              <label className="form-label">Mensaje</label>
-              <textarea className="form-control"></textarea>
-            </div>
-            <button type="submit" className="btn btn-primary">Enviar</button>
-          </form>
-        </section>
-      </main>
-
-      <footer className="site">
-        <div className="container inner">
-          <div className="cols">
-            <div>
-              <strong>HuertoHogar</strong>
-              <p>Productos frescos y orgánicos. Calidad local.</p>
-            </div>
-            <div>
-              <p><strong>Tiendas</strong></p>
-              <p>Santiago · Puerto Montt · Villarrica · Nacimiento</p>
-              <p>Viña del Mar · Valparaíso · Concepción</p>
-            </div>
-            <div>
-              <p><strong>Contacto</strong></p>
-              <p>contacto@huertohogar.cl</p>
-            </div>
+    <main className="container">
+      <section>
+        <h2>Contacto</h2>
+        <p>Envíanos un mensaje o visita nuestras tiendas.</p>
+        <form onSubmit={validateAndSend}>
+          <div className="mb-3">
+            <label className="form-label">Nombre</label>
+            <input 
+              type="text" 
+              className="form-control" 
+              value={nombre}
+              onChange={(e) => setNombre(e.target.value)}
+              placeholder="Tu nombre"
+            />
           </div>
-          <div>© 2025 HuertoHogar · Sitio educativo</div>
-        </div>
-      </footer>
-    </>
+          <div className="mb-3">
+            <label className="form-label">Email</label>
+            <input 
+              type="email" 
+              className="form-control"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="tu@email.com"
+            />
+          </div>
+          <div className="mb-3">
+            <label className="form-label">Mensaje</label>
+            <textarea 
+              className="form-control"
+              value={msj}
+              onChange={(e) => setMsj(e.target.value)}
+              placeholder="¿En qué podemos ayudarte?"
+              rows={4}
+            ></textarea>
+          </div>
+          {conMsg && (
+            <div className={`alert ${success ? 'alert-success' : 'alert-danger'}`} style={{ marginBottom: 16 }}>
+              {conMsg}
+            </div>
+          )}
+          <button type="submit" className="btn btn-primary">Enviar</button>
+        </form>
+      </section>
+    </main>
   );
 }

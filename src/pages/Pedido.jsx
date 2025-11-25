@@ -92,14 +92,21 @@ export default function Pedido() {
       navigate("/confirmacion", { state: { orderId: data.id } });
     } catch (err) {
       console.error("Error confirmando pedido:", err);
-      console.error("Response:", err.response?.data);
+      console.error("Response status:", err.response?.status);
+      console.error("Response data:", err.response?.data);
       
       if (err.response?.status === 401 || err.response?.status === 403) {
         setMsg("Sesión expirada o no autorizada. Por favor, inicia sesión nuevamente.");
+      } else if (err.response?.status === 400) {
+        // Error de validación del backend
+        const backendMsg = err.response?.data?.message || err.response?.data?.error || 'Error en los datos del pedido.';
+        setMsg(backendMsg);
       } else if (err.response?.data?.message) {
         setMsg(err.response.data.message);
+      } else if (err.code === 'ERR_NETWORK' || err.message?.includes('Network')) {
+        setMsg("Error de conexión. Verifica tu conexión a internet e intenta nuevamente.");
       } else {
-        setMsg("Ocurrió un error al procesar tu pedido. Intenta nuevamente.");
+        setMsg(`Error al procesar tu pedido: ${err.message || 'Intenta nuevamente.'}`);
       }
     } finally {
       setLoading(false);

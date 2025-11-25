@@ -1,26 +1,27 @@
 import React, { useEffect, useState } from "react";
 import productosDefault from "../data/productos";
 import { useCart } from "../context/CartContext";
-import { useNavigate } from 'react-router-dom';  // Agrega este import
+import { useNavigate } from 'react-router-dom';
+import api from '../api/client';
 
 export default function Carrito() {
   const { cart: cartObj, removeFromCart, clearCart } = useCart();
   const [cart, setCart] = useState([]);
-  const navigate = useNavigate();  // Agrega esto
+  const [productos, setProductos] = useState([]);
+  const navigate = useNavigate();
 
-  const loadCatalog = () => {
-    try {
-      const pRaw = localStorage.getItem("admin_products") || localStorage.getItem("productos") || localStorage.getItem("products");
-      if (pRaw) {
-        const parsed = JSON.parse(pRaw);
-        if (Array.isArray(parsed)) return parsed;
-        if (parsed && Array.isArray(parsed.items)) return parsed.items;
+  // Cargar productos del backend al iniciar
+  useEffect(() => {
+    (async () => {
+      try {
+        const { data } = await api.get('/v1/products');
+        setProductos(data);
+      } catch (err) {
+        console.debug("[Carrito] Error cargando productos del backend, usando datos locales:", err);
+        setProductos(Array.isArray(productosDefault) ? productosDefault : []);
       }
-    } catch (err) {
-      console.debug("[Carrito] no admin_products:", err);
-    }
-    return Array.isArray(productosDefault) ? productosDefault : [];
-  };
+    })();
+  }, []);
 
   const enrichItem = (raw, products) => {
     const qty = (() => {
@@ -54,8 +55,7 @@ export default function Carrito() {
     return { codigo, id, nombre, precio, img, stock, qty: Math.max(1, Number(qty) || 1) };
   };
 
-  const resolveAndMerge = (items) => {
-    const products = loadCatalog();
+  const resolveAndMerge = (items, products) => {
     const map = new Map();
     (Array.isArray(items) ? items : []).forEach(it => {
       const item = enrichItem(it, products);
@@ -77,10 +77,11 @@ export default function Carrito() {
 
   // Convertir el objeto {codigo: qty} del contexto a array enriquecido
   useEffect(() => {
+    if (productos.length === 0) return;
     const items = Object.entries(cartObj).map(([codigo, qty]) => ({ codigo, qty }));
-    const enriched = resolveAndMerge(items);
+    const enriched = resolveAndMerge(items, productos);
     setCart(enriched);
-  }, [cartObj]);
+  }, [cartObj, productos]);
 
   const removeItem = (codigo) => {
     removeFromCart(codigo);

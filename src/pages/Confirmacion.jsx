@@ -1,13 +1,14 @@
 import React, { useEffect, useState, useRef } from "react";
-import { useLocation, useNavigate } from 'react-router-dom';  // Agrega estos imports
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useCart } from "../context/CartContext";
-import productos from "../data/productos";
+import api from "../api/client";
 
 export default function Confirmacion() {
   const loc = useLocation();
-  const navigate = useNavigate();  // Agrega esto
-  const { cart, clearCart } = useCart();
+  const navigate = useNavigate();
+  const { clearCart } = useCart();
   const [order, setOrder] = useState(null);
+  const [loading, setLoading] = useState(true);
   const hasProcessed = useRef(false);
 
   useEffect(() => {
@@ -15,42 +16,38 @@ export default function Confirmacion() {
     hasProcessed.current = true;
 
     const orderId = loc.state?.orderId;
-    let found = null;
 
-    // Intentar cargar el pedido desde localStorage
-    try {
-      const raw = localStorage.getItem("last_order");
-      if (raw) {
-        found = JSON.parse(raw);
-      }
-    } catch {}
-
-    // Si no hay pedido guardado, construir uno desde el carrito actual
-    if (!found) {
-      try {
-        const items = Object.entries(cart).map(([codigo, qty]) => {
-          const producto = productos.find(p => p.codigo === codigo);
-          return producto ? { ...producto, qty } : null;
-        }).filter(Boolean);
-        if (items.length > 0) {
-          found = {
-            id: orderId ? orderId : `ORD${Date.now()}`,
+    (async () => {
+      if (orderId) {
+        try {
+          // Intentar cargar el pedido desde el backend
+          const { data } = await api.get(`/v1/orders/${orderId}`);
+          setOrder(data);
+          clearCart();
+        } catch (err) {
+          console.error('Error cargando pedido:', err);
+          // Si falla, mostrar info básica con el ID
+          setOrder({
+            id: orderId,
             created: new Date().toISOString(),
-            customer: { nombre: "", direccion: "", email: "", tel: "", region: "", comuna: "" },
-            items
-          };
+            items: []
+          });
         }
-      } catch {}
-    }
-
-    if (found) {
-      setOrder(found);
-      // Limpiar el carrito usando el contexto
-      clearCart();
-    } else {
-      setOrder(null);
-    }
+      } else {
+        setOrder(null);
+      }
+      setLoading(false);
+    })();
   }, [loc.state, clearCart]);
+
+  if (loading) {
+    return (
+      <main className="container">
+        <h2>Confirmación</h2>
+        <p>Cargando información del pedido...</p>
+      </main>
+    );
+  }
 
   if (!order) {
     return (
@@ -65,7 +62,7 @@ export default function Confirmacion() {
     );
   }
 
-  const total = (order.items || []).reduce((s, it) => s + (Number(it.precio) || 0) * (Number(it.qty) || 1), 0);
+  const total = (order.items || []).reduce((s, it) => s + (Number(it.precio) || 0) * (Number(it.qty || it.cantidad) || 1), 0);
   const formatCLP = (v) => {
     try {
       return new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(Math.round(Number(v) || 0));
@@ -80,14 +77,12 @@ export default function Confirmacion() {
 
         <section style={{marginTop:12}}>
           <h4>Datos de entrega</h4>
-          <p><strong>Nombre:</strong> {order.customer?.nombre || '—'}</p>
-          <p><strong>Dirección:</strong> {order.customer?.direccion || '—'}</p>
-          <p><strong>Email:</strong> {order.customer?.email || '—'}</p>
-          <p><strong>Tel:</strong> {order.customer?.tel || '—'}</p>
-          {order.customer?.region && <p><strong>Región:</strong> {order.customer.region}</p>}
-          {order.customer?.comuna && <p><strong>Comuna:</strong> {order.customer.comuna}</p>}
-          {order.entregaPreferida && <p><strong>Fecha preferida:</strong> {order.entregaPreferida}</p>}
+          <p><strong>Dirección:</strong> {order.direccionEntrega || order.customer?.direccion || '—'}</p>
+          {(order.region || order.customer?.region) && <p><strong>Región:</strong> {order.region || order.customer?.region}</p>}
+          {(order.comuna || order.customer?.comuna) && <p><strong>Comuna:</strong> {order.comuna || order.customer?.comuna}</p>}
+          {order.fechaEntrega && <p><strong>Fecha preferida:</strong> {order.fechaEntrega}</p>}
           {order.comentarios && <p><strong>Comentarios:</strong> {order.comentarios}</p>}
+          {order.status && <p><strong>Estado:</strong> {order.status}</p>}
         </section>
 
         <section style={{marginTop:12}}>
@@ -96,10 +91,10 @@ export default function Confirmacion() {
             <thead><tr><th>Producto</th><th>Cant.</th><th>Precio</th></tr></thead>
             <tbody>
               {(order.items || []).map((it, i) => (
-                <tr key={it.codigo || it.id || i}>
-                  <td>{it.nombre || (it.codigo ?? it.id)}</td>
-                  <td>{it.qty || 1}</td>
-                  <td>{formatCLP((it.precio || 0) * (it.qty || 1))}</td>
+                <tr key={it.codigo || it.productoId || it.id || i}>
+                  <td>{it.nombre || it.productoId || it.codigo || it.id}</td>
+                  <td>{it.qty || it.cantidad || 1}</td>
+                  <td>{formatCLP((it.precio || 0) * (it.qty || it.cantidad || 1))}</td>
                 </tr>
               ))}
             </tbody>
@@ -157,8 +152,8 @@ export default function Confirmacion() {
           <div className="lines">
             {(order.items || []).slice(0,5).map((it, i) => (
               <div className="line" key={i}>
-                <span style={{fontWeight:500,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',maxWidth:160}}>{it.nombre || it.codigo}</span>
-                <span style={{color:'#444'}}>{it.qty || 1}</span>
+                <span style={{fontWeight:500,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',maxWidth:160}}>{it.nombre || it.productoId || it.codigo}</span>
+                <span style={{color:'#444'}}>{it.qty || it.cantidad || 1}</span>
               </div>
             ))}
           </div>

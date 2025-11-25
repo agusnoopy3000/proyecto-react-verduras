@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { toast } from 'react-toastify';
 import api from '../api/client';
+import { useAuth } from '../context/AuthContext';
 
 export default function Perfil() {
-  const [user, setUser] = useState(null);
+  const { user, logout, isAuthenticated } = useAuth();
   const [profile, setProfile] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const cur = 'perfil';
@@ -14,29 +16,25 @@ export default function Perfil() {
       if (href.includes(cur)) a.classList.add('active');
     });
 
-    // Cargar datos del usuario desde localStorage
-    const storedUser = localStorage.getItem('huertohogar_user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
+    if (isAuthenticated) {
+      (async () => {
+        try {
+          const { data } = await api.get('/v1/users/me');
+          setProfile(data);
+        } catch (e) {
+          console.error('Error cargando perfil', e);
+        }
+      })();
     }
-
-    (async () => {
-      try {
-        const { data } = await api.get('/v1/users/me');
-        setProfile(data);
-      } catch (e) {
-        console.error('Error cargando perfil', e);
-      }
-    })();
-  }, []);
+  }, [isAuthenticated]);
 
   const handleLogout = () => {
-    localStorage.removeItem('huertohogar_user');
-    setUser(null);
+    logout();
     toast.success('Sesión Cerrada Exitosamente', { icon: '🚪' });
+    navigate('/');
   };
 
-  if (!user) {
+  if (!isAuthenticated) {
     return (
       <main className="container">
         <section>
@@ -57,10 +55,10 @@ export default function Perfil() {
               <div className="card-body">
                 <h5 className="card-title">Información Personal</h5>
                 <p className="card-text">
-                  <strong>RUN:</strong> {profile?.run || user.run}<br />
-                  <strong>Nombre:</strong> {profile?.nombre || user.nombre}<br />
-                  <strong>Apellidos:</strong> {profile?.apellidos || user.apellidos}<br />
-                  <strong>Email:</strong> {profile?.email || user.email}
+                  <strong>RUN:</strong> {profile?.run || 'No especificado'}<br />
+                  <strong>Nombre:</strong> {profile?.nombre || 'No especificado'}<br />
+                  <strong>Apellidos:</strong> {profile?.apellidos || 'No especificado'}<br />
+                  <strong>Email:</strong> {profile?.email || user?.email}
                 </p>
               </div>
             </div>
@@ -71,8 +69,8 @@ export default function Perfil() {
               <div className="card-body">
                 <h5 className="card-title">Ubicación</h5>
                 <p className="card-text">
-                  <strong>Región:</strong> {profile?.region || user.region || 'No especificada'}<br />
-                  <strong>Comuna:</strong> {profile?.comuna || user.comuna || 'No especificada'}
+                  <strong>Región:</strong> {profile?.region || 'No especificada'}<br />
+                  <strong>Comuna:</strong> {profile?.comuna || 'No especificada'}
                 </p>
               </div>
             </div>

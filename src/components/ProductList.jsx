@@ -1,16 +1,28 @@
 import React, { useEffect, useState } from "react";
 import ProductCard from "./ProductCard";
 import { useCart } from "../context/CartContext";
+import api from "../api/client";
 import productosData from "../data/productos";
 
 export default function ProductList() {
   const [productos, setProductos] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [q, setQ] = useState('');
   const [categoria, setCategoria] = useState('');
   const { addToCart } = useCart();
 
   useEffect(() => {
-    setProductos(productosData);
+    (async () => {
+      try {
+        const { data } = await api.get('/v1/products');
+        setProductos(data);
+      } catch (err) {
+        console.error('Error cargando productos del backend, usando datos locales:', err);
+        setProductos(productosData);
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, []);
 
   const categorias = Array.from(new Set(productos.map(p => p.categoria))).filter(Boolean);
@@ -23,6 +35,7 @@ export default function ProductList() {
 
   return (
     <div>
+      {loading && <p className="text-center">Cargando productos...</p>}
       <div className="controls mb-3">
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:12}}>
           <div>

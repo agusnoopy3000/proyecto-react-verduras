@@ -154,9 +154,17 @@ export default function Admin() {
         formData.append('descripcion', descripcionDoc.trim());
       }
       
+      // Log para debug
+      console.log('Subiendo archivo:', {
+        nombre: selectedFile.name,
+        tipo: tipoDocumento,
+        descripcion: descripcionDoc,
+        tamaño: selectedFile.size
+      });
+      
       // Endpoint: POST /documentos (sin /v1/)
+      // NO especificar Content-Type manualmente, axios lo configura automáticamente con el boundary correcto
       const { data } = await api.post('/documentos', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
         onUploadProgress: (progressEvent) => {
           const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
           setUploadProgress(percent);

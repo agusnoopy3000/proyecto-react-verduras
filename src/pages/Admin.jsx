@@ -33,6 +33,13 @@ export default function Admin() {
   const [tipoDocumento, setTipoDocumento] = useState('OTRO');
   const [descripcionDoc, setDescripcionDoc] = useState('');
 
+  // Estados para modal de confirmación
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [confirmAction, setConfirmAction] = useState(null);
+  const [confirmMessage, setConfirmMessage] = useState('');
+  const [confirmTitle, setConfirmTitle] = useState('');
+  const [confirmIcon, setConfirmIcon] = useState('⚠️');
+
   // Tipos de documento disponibles
   const tiposDocumento = [
     { value: 'FACTURA', label: '📄 Factura' },
@@ -46,6 +53,20 @@ export default function Admin() {
   const USERS_KEY = "users";
   const PRODS_KEY = "admin_products";
 
+  // Helper para mostrar confirmaciones bonitas
+  const showConfirm = (title, message, icon, action) => {
+    setConfirmTitle(title);
+    setConfirmMessage(message);
+    setConfirmIcon(icon);
+    setConfirmAction(() => action);
+    setShowConfirmModal(true);
+  };
+
+  const handleConfirmAction = () => {
+    if (confirmAction) confirmAction();
+    setShowConfirmModal(false);
+  };
+
   useEffect(() => {
     loadUsers();
     loadProducts();
@@ -56,7 +77,18 @@ export default function Admin() {
   const loadUsers = async () => {
     try {
       const { data } = await api.get('/v1/users', { params: { page: 0, size: 50 } });
-      setUsers(data?.content || data || []);
+      const rawData = data?.content || data || [];
+      // Filtrar SOLO usuarios válidos (deben tener email Y nombre, y NO deben tener codigo/precio de producto)
+      const filteredUsers = (Array.isArray(rawData) ? rawData : []).filter(item => 
+        item && 
+        item.email && 
+        item.nombre && 
+        !item.codigo && 
+        !item.precio &&
+        !item.stock // Asegurar que no sean productos
+      );
+      console.log('Usuarios filtrados:', filteredUsers.length, 'de', (Array.isArray(rawData) ? rawData.length : 0));
+      setUsers(filteredUsers);
     } catch {
       setUsers([]);
     }
@@ -95,7 +127,17 @@ export default function Admin() {
   const loadOrders = async () => {
     try {
       const { data } = await api.get('/v1/orders');
-      setOrders(data);
+      // Filtrar SOLO pedidos válidos (deben tener id Y status/estado, y NO deben tener email/run de usuario)
+      const filteredOrders = (Array.isArray(data) ? data : []).filter(item => 
+        item && 
+        item.id && 
+        (item.status || item.estado) && 
+        !item.run && 
+        !item.apellidos && 
+        item.id !== item.email // Asegurar que no sean usuarios confundidos
+      );
+      console.log('Pedidos filtrados:', filteredOrders.length, 'de', (Array.isArray(data) ? data.length : 0));
+      setOrders(filteredOrders);
     } catch (err) {
       console.error('Error cargando pedidos', err);
       setOrders([]);
@@ -188,18 +230,22 @@ export default function Admin() {
   };
 
   const handleDeleteDocument = async (doc) => {
-    if (!confirm(`¿Eliminar el archivo "${doc.nombre || doc.nombreArchivo}"?`)) return;
-    
-    try {
-      // Endpoint: DELETE /documentos/{id}
-      await api.delete(`/documentos/${doc.id}`);
-      toast.success('Archivo eliminado');
-      loadDocuments();
-    } catch (err) {
-      console.error('Error eliminando archivo', err);
-      const errorMsg = err.response?.data?.message || err.response?.data?.error || 'No se pudo eliminar';
-      toast.error(errorMsg);
-    }
+    showConfirm(
+      '🗑️ Eliminar Documento',
+      `¿Estás seguro de que deseas eliminar el archivo "${doc.nombre || doc.nombreArchivo}"?`,
+      '🗑️',
+      async () => {
+        try {
+          await api.delete(`/documentos/${doc.id}`);
+          toast.success('Archivo eliminado');
+          loadDocuments();
+        } catch (err) {
+          console.error('Error eliminando archivo', err);
+          const errorMsg = err.response?.data?.message || err.response?.data?.error || 'No se pudo eliminar';
+          toast.error(errorMsg);
+        }
+      }
+    );
   };
 
   const handleDownloadDocument = (doc) => {
@@ -276,9 +322,17 @@ export default function Admin() {
     setShowUserModal(false);
   };
   const deleteUser = (idx) => {
-    if (!confirm("Eliminar usuario?")) return;
-    const next = users.filter((_, i) => i !== idx);
-    saveUsers(next);
+    const user = users[idx];
+    showConfirm(
+      '🗑️ Eliminar Usuario',
+      `¿Estás seguro de que deseas eliminar al usuario "${user.nombre} ${user.apellidos}"?`,
+      '👤',
+      () => {
+        const next = users.filter((_, i) => i !== idx);
+        saveUsers(next);
+        toast.success('Usuario eliminado');
+      }
+    );
   };
 
   // Products handlers
@@ -311,9 +365,17 @@ export default function Admin() {
     setShowProdModal(false);
   };
   const deleteProd = (idx) => {
-    if (!confirm("Eliminar producto?")) return;
-    const next = products.filter((_, i) => i !== idx);
-    saveProducts(next);
+    const product = products[idx];
+    showConfirm(
+      '🗑️ Eliminar Producto',
+      `¿Estás seguro de que deseas eliminar el producto "${product.nombre}"?`,
+      '📦',
+      () => {
+        const next = products.filter((_, i) => i !== idx);
+        saveProducts(next);
+        toast.success('Producto eliminado');
+      }
+    );
   };
 
   // Orders handlers
@@ -387,32 +449,34 @@ export default function Admin() {
   const onOrderChange = (k, v) => setOrderForm(prev => ({ ...prev, [k]: v }));
 
   return (
-    <main className="container-fluid" style={{ paddingTop: 24, paddingBottom: 40 }}>
-      <div className="row g-4">
-        {/* Sidebar de Navegación - Vertical */}
-        <div className="col-12 col-lg-3">
-          {/* Header Section */}
-          <div style={{
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            borderRadius: 16,
-            padding: '24px 20px',
-            marginBottom: 24,
-            boxShadow: '0 4px 16px rgba(102, 126, 234, 0.3)'
-          }}>
-            <h2 style={{ 
-              color: '#fff', 
-              margin: 0, 
-              fontSize: 24,
-              fontWeight: 700,
-              textShadow: '0 2px 4px rgba(0,0,0,0.1)',
-              textAlign: 'center'
-            }}>
-              🎛️ Panel Admin
-            </h2>
-          </div>
+    <main className="container-fluid" style={{ paddingTop: 24, paddingBottom: 40, maxWidth: 1400 }}>
+      {/* Header Section */}
+      <div style={{
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        borderRadius: 16,
+        padding: '24px 20px',
+        marginBottom: 24,
+        boxShadow: '0 4px 16px rgba(102, 126, 234, 0.3)'
+      }}>
+        <h2 style={{ 
+          color: '#fff', 
+          margin: 0, 
+          fontSize: 24,
+          fontWeight: 700,
+          textShadow: '0 2px 4px rgba(0,0,0,0.1)',
+          textAlign: 'center'
+        }}>
+          🎛️ Panel Admin
+        </h2>
+      </div>
 
-          {/* Navigation Menu - Vertical */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      {/* Navigation Menu - Horizontal Grid */}
+      <div style={{ 
+        display: 'grid', 
+        gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+        gap: 16,
+        marginBottom: 32
+      }}>
             {/* Productos Section */}
             <div style={{
               background: '#fff',
@@ -421,8 +485,11 @@ export default function Admin() {
               boxShadow: view === "productos" ? '0 4px 16px rgba(13, 110, 253, 0.3)' : '0 2px 8px rgba(0,0,0,0.08)',
               border: view === "productos" ? '2px solid #0d6efd' : '2px solid transparent',
               transition: 'all 0.3s ease',
-              transform: view === "productos" ? 'translateX(8px)' : 'translateX(0)'
-            }}>
+              transform: view === "productos" ? 'translateY(-4px)' : 'translateY(0)',
+              cursor: 'pointer'
+            }}
+            onClick={() => setView("productos")}
+            >
               <div style={{ 
                 display: 'flex', 
                 alignItems: 'center', 
@@ -445,15 +512,11 @@ export default function Admin() {
                 </span>
               </div>
               <button 
-                className={`btn w-100 mb-2 ${view === "productos" ? "btn-primary" : "btn-outline-primary"}`}
-                onClick={() => setView("productos")}
-                style={{ fontWeight: 600, fontSize: 15 }}
-              >
-                Ver Productos
-              </button>
-              <button 
                 className="btn btn-success w-100" 
-                onClick={openNewProd}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  openNewProd();
+                }}
                 style={{ fontSize: 14, fontWeight: 600 }}
               >
                 ＋ Nuevo Producto
@@ -468,8 +531,11 @@ export default function Admin() {
               boxShadow: view === "usuarios" ? '0 4px 16px rgba(108, 117, 125, 0.3)' : '0 2px 8px rgba(0,0,0,0.08)',
               border: view === "usuarios" ? '2px solid #6c757d' : '2px solid transparent',
               transition: 'all 0.3s ease',
-              transform: view === "usuarios" ? 'translateX(8px)' : 'translateX(0)'
-            }}>
+              transform: view === "usuarios" ? 'translateY(-4px)' : 'translateY(0)',
+              cursor: 'pointer'
+            }}
+            onClick={() => setView("usuarios")}
+            >
               <div style={{ 
                 display: 'flex', 
                 alignItems: 'center', 
@@ -492,15 +558,11 @@ export default function Admin() {
                 </span>
               </div>
               <button 
-                className={`btn w-100 mb-2 ${view === "usuarios" ? "btn-secondary" : "btn-outline-secondary"}`}
-                onClick={() => setView("usuarios")}
-                style={{ fontWeight: 600, fontSize: 15 }}
-              >
-                Ver Usuarios
-              </button>
-              <button 
                 className="btn btn-info w-100" 
-                onClick={openNewUser}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  openNewUser();
+                }}
                 style={{ fontSize: 14, fontWeight: 600 }}
               >
                 ＋ Nuevo Usuario
@@ -515,8 +577,11 @@ export default function Admin() {
               boxShadow: view === "pedidos" ? '0 4px 16px rgba(255, 193, 7, 0.3)' : '0 2px 8px rgba(0,0,0,0.08)',
               border: view === "pedidos" ? '2px solid #ffc107' : '2px solid transparent',
               transition: 'all 0.3s ease',
-              transform: view === "pedidos" ? 'translateX(8px)' : 'translateX(0)'
-            }}>
+              transform: view === "pedidos" ? 'translateY(-4px)' : 'translateY(0)',
+              cursor: 'pointer'
+            }}
+            onClick={() => setView("pedidos")}
+            >
               <div style={{ 
                 display: 'flex', 
                 alignItems: 'center', 
@@ -539,11 +604,12 @@ export default function Admin() {
                 </span>
               </div>
               <button 
-                className={`btn w-100 ${view === "pedidos" ? "btn-warning" : "btn-outline-warning"}`}
-                onClick={() => setView("pedidos")}
-                style={{ fontWeight: 600, fontSize: 15 }}
+                className="btn btn-outline-warning w-100"
+                style={{ fontWeight: 600, fontSize: 14 }}
+                onClick={(e) => e.stopPropagation()}
+                disabled
               >
-                Ver Pedidos
+                📊 Ver Estadísticas
               </button>
             </div>
 
@@ -555,8 +621,11 @@ export default function Admin() {
               boxShadow: view === "documentos" ? '0 4px 16px rgba(33, 37, 41, 0.3)' : '0 2px 8px rgba(0,0,0,0.08)',
               border: view === "documentos" ? '2px solid #212529' : '2px solid transparent',
               transition: 'all 0.3s ease',
-              transform: view === "documentos" ? 'translateX(8px)' : 'translateX(0)'
-            }}>
+              transform: view === "documentos" ? 'translateY(-4px)' : 'translateY(0)',
+              cursor: 'pointer'
+            }}
+            onClick={() => setView("documentos")}
+            >
               <div style={{ 
                 display: 'flex', 
                 alignItems: 'center', 
@@ -579,19 +648,17 @@ export default function Admin() {
                 </span>
               </div>
               <button 
-                className={`btn w-100 ${view === "documentos" ? "btn-dark" : "btn-outline-dark"}`}
-                onClick={() => setView("documentos")}
-                style={{ fontWeight: 600, fontSize: 15 }}
+                className="btn btn-dark w-100"
+                style={{ fontWeight: 600, fontSize: 14 }}
+                onClick={(e) => e.stopPropagation()}
               >
-                Gestionar S3
+                🌐 Gestión S3
               </button>
             </div>
           </div>
-        </div>
 
         {/* Content Area */}
-        <div className="col-12 col-lg-9">
-          <div id="adminContent">
+        <div id="adminContent" style={{ marginTop: 24 }}>
         {view === "usuarios" ? (
           <section style={{
             background: '#fff',
@@ -1498,15 +1565,73 @@ export default function Admin() {
                     Subiendo...
                   </>
                 ) : (
-                  <>📤 Subir</>
+                  <>📤 Subir                </>
                 )}
               </button>
             </div>
           </div>
         </div>
       )}
-      </div>
-      </div>
+
+      {/* Modal de Confirmación Bonito */}
+      {showConfirmModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.6)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999,
+          animation: 'fadeIn 0.2s ease'
+        }}
+        onClick={() => setShowConfirmModal(false)}
+        >
+          <div style={{
+            background: '#fff',
+            borderRadius: 16,
+            padding: 32,
+            maxWidth: 450,
+            width: '90%',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+            animation: 'slideUp 0.3s ease',
+            position: 'relative'
+          }}
+          onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ textAlign: 'center', marginBottom: 24 }}>
+              <div style={{ fontSize: 64, marginBottom: 16 }}>{confirmIcon}</div>
+              <h3 style={{ margin: 0, marginBottom: 12, color: '#2d3436', fontWeight: 700 }}>
+                {confirmTitle}
+              </h3>
+              <p style={{ margin: 0, color: '#636e72', fontSize: 16, lineHeight: 1.5 }}>
+                {confirmMessage}
+              </p>
+            </div>
+            
+            <div style={{ display: 'flex', gap: 12 }}>
+              <button
+                className="btn btn-secondary"
+                style={{ flex: 1, padding: '12px', fontSize: 15, fontWeight: 600 }}
+                onClick={() => setShowConfirmModal(false)}
+              >
+                ❌ Cancelar
+              </button>
+              <button
+                className="btn btn-danger"
+                style={{ flex: 1, padding: '12px', fontSize: 15, fontWeight: 600 }}
+                onClick={handleConfirmAction}
+              >
+                ✅ Confirmar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

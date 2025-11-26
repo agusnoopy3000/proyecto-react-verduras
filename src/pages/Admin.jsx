@@ -4,10 +4,11 @@ import productosDefault from "../data/productos";
 import api from '../api/client';
 
 export default function Admin() {
-  const [view, setView] = useState("productos"); // 'productos' | 'usuarios' | 'pedidos'
+  const [view, setView] = useState("productos"); // 'productos' | 'usuarios' | 'pedidos' | 'documentos'
   const [users, setUsers] = useState([]);
   const [products, setProducts] = useState([]);
   const [orders, setOrders] = useState([]);
+  const [documents, setDocuments] = useState([]);
   const [showUserModal, setShowUserModal] = useState(false);
   const [showProdModal, setShowProdModal] = useState(false);
   const [showOrderModal, setShowOrderModal] = useState(false);
@@ -21,6 +22,25 @@ export default function Admin() {
   const [prodForm, setProdForm] = useState(emptyProd);
   const [orderForm, setOrderForm] = useState(emptyOrder);
   const [msg, setMsg] = useState("");
+  
+  // Estados para subida de archivos
+  const [uploadingFile, setUploadingFile] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [dragOver, setDragOver] = useState(false);
+  const [loadingDocs, setLoadingDocs] = useState(false);
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [tipoDocumento, setTipoDocumento] = useState('OTRO');
+  const [descripcionDoc, setDescripcionDoc] = useState('');
+
+  // Tipos de documento disponibles
+  const tiposDocumento = [
+    { value: 'FACTURA', label: '📄 Factura' },
+    { value: 'ORDEN_COMPRA', label: '📋 Orden de Compra' },
+    { value: 'GUIA_DESPACHO', label: '🚚 Guía de Despacho' },
+    { value: 'CONTRATO', label: '📝 Contrato' },
+    { value: 'OTRO', label: '📁 Otro' }
+  ];
 
   // storage keys (solo para compatibilidad antigua de usuarios/productos)
   const USERS_KEY = "users";
@@ -30,6 +50,7 @@ export default function Admin() {
     loadUsers();
     loadProducts();
     loadOrders();
+    loadDocuments();
   }, []);
 
   const loadUsers = async () => {
@@ -72,6 +93,142 @@ export default function Admin() {
       console.error('Error cargando pedidos', err);
       setOrders([]);
     }
+  };
+
+  // Documentos/Archivos S3 handlers - Endpoint: /documentos (sin /v1/)
+  const loadDocuments = async () => {
+    setLoadingDocs(true);
+    try {
+      const { data } = await api.get('/documentos');
+      setDocuments(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error('Error cargando documentos', err);
+      setDocuments([]);
+    } finally {
+      setLoadingDocs(false);
+    }
+  };
+
+  const openUploadModal = (file = null) => {
+    setSelectedFile(file);
+    setTipoDocumento('OTRO');
+    setDescripcionDoc('');
+    setShowUploadModal(true);
+  };
+
+  const handleFileSelect = (files) => {
+    if (!files || files.length === 0) return;
+    
+    const file = files[0];
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    
+    if (file.size > maxSize) {
+      toast.error('El archivo excede el tamaño máximo (10MB)');
+      return;
+    }
+    
+    openUploadModal(file);
+  };
+
+  const handleFileUpload = async () => {
+    if (!selectedFile) {
+      toast.error('Selecciona un archivo');
+      return;
+    }
+
+    setUploadingFile(true);
+    setUploadProgress(0);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', selectedFile);
+      formData.append('tipoDocumento', tipoDocumento);
+      if (descripcionDoc.trim()) {
+        formData.append('descripcion', descripcionDoc.trim());
+      }
+      
+      // Endpoint: POST /documentos (sin /v1/)
+      const { data } = await api.post('/documentos', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        onUploadProgress: (progressEvent) => {
+          const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+          setUploadProgress(percent);
+        }
+      });
+
+      toast.success(`Archivo "${selectedFile.name}" subido exitosamente a S3`);
+      setShowUploadModal(false);
+      setSelectedFile(null);
+      setTipoDocumento('OTRO');
+      setDescripcionDoc('');
+      loadDocuments(); // Recargar lista
+    } catch (err) {
+      console.error('Error subiendo archivo', err);
+      const errorMsg = err.response?.data?.message || err.response?.data?.error || err.message || 'Error desconocido';
+      toast.error(`Error al subir archivo: ${errorMsg}`);
+    } finally {
+      setUploadingFile(false);
+      setUploadProgress(0);
+    }
+  };
+
+  const handleDeleteDocument = async (doc) => {
+    if (!confirm(`¿Eliminar el archivo "${doc.nombre || doc.nombreArchivo}"?`)) return;
+    
+    try {
+      // Endpoint: DELETE /documentos/{id}
+      await api.delete(`/documentos/${doc.id}`);
+      toast.success('Archivo eliminado');
+      loadDocuments();
+    } catch (err) {
+      console.error('Error eliminando archivo', err);
+      const errorMsg = err.response?.data?.message || err.response?.data?.error || 'No se pudo eliminar';
+      toast.error(errorMsg);
+    }
+  };
+
+  const handleDownloadDocument = (doc) => {
+    // Usar urlArchivo del backend
+    const url = doc.urlArchivo || doc.urlPublica || doc.url;
+    if (url) {
+      window.open(url, '_blank');
+    } else {
+      toast.error('URL no disponible');
+    }
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setDragOver(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    setDragOver(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setDragOver(false);
+    const files = e.dataTransfer.files;
+    handleFileSelect(files);
+  };
+
+  const formatFileSize = (bytes) => {
+    if (!bytes) return '—';
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+  };
+
+  const getFileIcon = (fileName) => {
+    const ext = (fileName || '').split('.').pop().toLowerCase();
+    const icons = {
+      pdf: '📄', doc: '📝', docx: '📝', xls: '📊', xlsx: '📊',
+      jpg: '🖼️', jpeg: '🖼️', png: '🖼️', gif: '🖼️', webp: '🖼️',
+      zip: '📦', rar: '📦', txt: '📃', csv: '📋'
+    };
+    return icons[ext] || '📁';
   };
 
   // Users handlers
@@ -215,90 +372,550 @@ export default function Admin() {
   const onOrderChange = (k, v) => setOrderForm(prev => ({ ...prev, [k]: v }));
 
   return (
-    <main className="container">
-      <h2>Panel Administrador</h2>
+    <main className="container" style={{ paddingTop: 24, paddingBottom: 40 }}>
+      {/* Header Section */}
+      <div style={{
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        borderRadius: 16,
+        padding: '32px 28px',
+        marginBottom: 32,
+        boxShadow: '0 4px 16px rgba(102, 126, 234, 0.3)'
+      }}>
+        <h2 style={{ 
+          color: '#fff', 
+          margin: 0, 
+          fontSize: 28,
+          fontWeight: 700,
+          textShadow: '0 2px 4px rgba(0,0,0,0.1)'
+        }}>
+          🎛️ Panel de Administración
+        </h2>
+        <p style={{ color: 'rgba(255,255,255,0.9)', margin: '8px 0 0', fontSize: 15 }}>
+          Gestiona productos, usuarios, pedidos y documentos
+        </p>
+      </div>
 
-      <div className="mb-3">
-        <div className="d-flex flex-wrap gap-2">
-          <button className={`btn ${view === "productos" ? "btn-primary" : "btn-outline-primary"}`} onClick={() => setView("productos")}>Lista de Productos</button>
-          <button className="btn btn-success" onClick={openNewProd}>＋ Nuevo Producto</button>
-          <button className={`btn ${view === "usuarios" ? "btn-secondary" : "btn-outline-secondary"}`} onClick={() => setView("usuarios")}>Lista de Usuarios</button>
-          <button className="btn btn-info" onClick={openNewUser}>＋ Nuevo Usuario</button>
-          <button className={`btn ${view === "pedidos" ? "btn-warning" : "btn-outline-warning"}`} onClick={() => setView("pedidos")}>Lista de Pedidos</button>
+      {/* Navigation Tabs */}
+      <div style={{ marginBottom: 28 }}>
+        <div className="row g-3">
+          {/* Productos Section */}
+          <div className="col-12 col-md-6 col-lg-3">
+            <div style={{
+              background: '#fff',
+              borderRadius: 12,
+              padding: 16,
+              boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+              border: view === "productos" ? '2px solid #0d6efd' : '2px solid transparent',
+              transition: 'all 0.2s'
+            }}>
+              <button 
+                className={`btn w-100 mb-2 ${view === "productos" ? "btn-primary" : "btn-outline-primary"}`}
+                onClick={() => setView("productos")}
+                style={{ fontWeight: 600 }}
+              >
+                📦 Productos
+              </button>
+              <button 
+                className="btn btn-success btn-sm w-100" 
+                onClick={openNewProd}
+                style={{ fontSize: 13 }}
+              >
+                ＋ Nuevo Producto
+              </button>
+            </div>
+          </div>
+
+          {/* Usuarios Section */}
+          <div className="col-12 col-md-6 col-lg-3">
+            <div style={{
+              background: '#fff',
+              borderRadius: 12,
+              padding: 16,
+              boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+              border: view === "usuarios" ? '2px solid #6c757d' : '2px solid transparent',
+              transition: 'all 0.2s'
+            }}>
+              <button 
+                className={`btn w-100 mb-2 ${view === "usuarios" ? "btn-secondary" : "btn-outline-secondary"}`}
+                onClick={() => setView("usuarios")}
+                style={{ fontWeight: 600 }}
+              >
+                👥 Usuarios
+              </button>
+              <button 
+                className="btn btn-info btn-sm w-100" 
+                onClick={openNewUser}
+                style={{ fontSize: 13 }}
+              >
+                ＋ Nuevo Usuario
+              </button>
+            </div>
+          </div>
+
+          {/* Pedidos Section */}
+          <div className="col-12 col-md-6 col-lg-3">
+            <div style={{
+              background: '#fff',
+              borderRadius: 12,
+              padding: 16,
+              boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+              border: view === "pedidos" ? '2px solid #ffc107' : '2px solid transparent',
+              transition: 'all 0.2s'
+            }}>
+              <button 
+                className={`btn w-100 ${view === "pedidos" ? "btn-warning" : "btn-outline-warning"}`}
+                onClick={() => setView("pedidos")}
+                style={{ fontWeight: 600 }}
+              >
+                📋 Pedidos
+              </button>
+            </div>
+          </div>
+
+          {/* Documentos Section */}
+          <div className="col-12 col-md-6 col-lg-3">
+            <div style={{
+              background: '#fff',
+              borderRadius: 12,
+              padding: 16,
+              boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+              border: view === "documentos" ? '2px solid #212529' : '2px solid transparent',
+              transition: 'all 0.2s'
+            }}>
+              <button 
+                className={`btn w-100 ${view === "documentos" ? "btn-dark" : "btn-outline-dark"}`}
+                onClick={() => setView("documentos")}
+                style={{ fontWeight: 600 }}
+              >
+                📁 Documentos S3
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
       <div id="adminContent">
         {view === "usuarios" ? (
-          <section>
-            <h3>Usuarios ({users.length})</h3>
-            {users.length === 0 ? <p>No hay usuarios registrados.</p> : (
-              <table className="table">
-                <thead><tr><th>RUN</th><th>Nombre</th><th>Apellidos</th><th>Email</th><th>Tipo</th><th>Acciones</th></tr></thead>
-                <tbody>
-                  {users.map((u, i) => (
-                    <tr key={u.run || u.id || i}>
-                      <td>{u.run}</td>
-                      <td>{u.nombre}</td>
-                      <td>{u.apellidos}</td>
-                      <td>{u.email}</td>
-                      <td>{u.tipo}</td>
-                      <td>
-                        <button className="btn btn-sm btn-outline-primary me-2" onClick={() => openEditUser(i)}>Editar</button>
-                        <button className="btn btn-sm btn-outline-danger" onClick={() => deleteUser(i)}>Eliminar</button>
-                      </td>
+          <section style={{
+            background: '#fff',
+            borderRadius: 12,
+            padding: 24,
+            boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
+          }}>
+            <h3 style={{ marginBottom: 20, color: '#2d3436', fontWeight: 600 }}>
+              👥 Usuarios ({users.length})
+            </h3>
+            {users.length === 0 ? (
+              <div style={{ padding: 40, textAlign: 'center' }}>
+                <div style={{ fontSize: 48, marginBottom: 12 }}>👤</div>
+                <p className="text-muted">No hay usuarios registrados.</p>
+              </div>
+            ) : (
+              <div className="table-responsive">
+                <table className="table table-hover" style={{ marginBottom: 0 }}>
+                  <thead style={{ background: '#f8f9fa' }}>
+                    <tr>
+                      <th style={{ padding: '12px 16px', fontWeight: 600 }}>RUN</th>
+                      <th style={{ padding: '12px 16px', fontWeight: 600 }}>Nombre</th>
+                      <th style={{ padding: '12px 16px', fontWeight: 600 }}>Apellidos</th>
+                      <th style={{ padding: '12px 16px', fontWeight: 600 }}>Email</th>
+                      <th style={{ padding: '12px 16px', fontWeight: 600 }}>Tipo</th>
+                      <th style={{ padding: '12px 16px', fontWeight: 600 }}>Acciones</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {users.map((u, i) => (
+                      <tr key={u.run || u.id || i}>
+                        <td style={{ padding: '12px 16px' }}>{u.run}</td>
+                        <td style={{ padding: '12px 16px' }}>{u.nombre}</td>
+                        <td style={{ padding: '12px 16px' }}>{u.apellidos}</td>
+                        <td style={{ padding: '12px 16px' }}>{u.email}</td>
+                        <td style={{ padding: '12px 16px' }}>
+                          <span style={{
+                            background: u.tipo === 'Administrador' ? '#e8f5e9' : '#f0f0f0',
+                            padding: '4px 12px',
+                            borderRadius: 12,
+                            fontSize: 13,
+                            fontWeight: 500
+                          }}>
+                            {u.tipo}
+                          </span>
+                        </td>
+                        <td style={{ padding: '12px 16px' }}>
+                          <button className="btn btn-sm btn-outline-primary me-2" onClick={() => openEditUser(i)}>✏️ Editar</button>
+                          <button className="btn btn-sm btn-outline-danger" onClick={() => deleteUser(i)}>🗑️ Eliminar</button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )}
           </section>
         ) : view === "productos" ? (
-          <section>
-            <h3>Productos ({products.length})</h3>
-            {products.length === 0 ? <p>No hay productos.</p> : (
-              <table className="table">
-                <thead><tr><th>Código</th><th>Nombre</th><th>Precio</th><th>Stock</th><th>Categoría</th><th>Acciones</th></tr></thead>
-                <tbody>
-                  {products.map((p, i) => (
-                    <tr key={p.codigo || p.id || i}>
-                      <td>{p.codigo}</td>
-                      <td>{p.nombre}</td>
-                      <td>{Number(p.precio).toLocaleString('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 })}</td>
-                      <td>{p.stock ?? "—"}</td>
-                      <td>{p.categoria ?? p.categ ?? "—"}</td>
-                      <td>
-                        <button className="btn btn-sm btn-outline-primary me-2" onClick={() => openEditProd(i)}>Editar</button>
-                        <button className="btn btn-sm btn-outline-danger" onClick={() => deleteProd(i)}>Eliminar</button>
-                      </td>
+          <section style={{
+            background: '#fff',
+            borderRadius: 12,
+            padding: 24,
+            boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
+          }}>
+            <h3 style={{ marginBottom: 20, color: '#2d3436', fontWeight: 600 }}>
+              📦 Productos ({products.length})
+            </h3>
+            {products.length === 0 ? (
+              <div style={{ padding: 40, textAlign: 'center' }}>
+                <div style={{ fontSize: 48, marginBottom: 12 }}>📦</div>
+                <p className="text-muted">No hay productos.</p>
+              </div>
+            ) : (
+              <div className="table-responsive">
+                <table className="table table-hover" style={{ marginBottom: 0 }}>
+                  <thead style={{ background: '#f8f9fa' }}>
+                    <tr>
+                      <th style={{ padding: '12px 16px', fontWeight: 600 }}>Código</th>
+                      <th style={{ padding: '12px 16px', fontWeight: 600 }}>Nombre</th>
+                      <th style={{ padding: '12px 16px', fontWeight: 600 }}>Precio</th>
+                      <th style={{ padding: '12px 16px', fontWeight: 600 }}>Stock</th>
+                      <th style={{ padding: '12px 16px', fontWeight: 600 }}>Categoría</th>
+                      <th style={{ padding: '12px 16px', fontWeight: 600 }}>Acciones</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {products.map((p, i) => (
+                      <tr key={p.codigo || p.id || i}>
+                        <td style={{ padding: '12px 16px', fontFamily: 'monospace' }}>{p.codigo}</td>
+                        <td style={{ padding: '12px 16px', fontWeight: 500 }}>{p.nombre}</td>
+                        <td style={{ padding: '12px 16px', fontWeight: 600, color: '#28a745' }}>
+                          {Number(p.precio).toLocaleString('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 })}
+                        </td>
+                        <td style={{ padding: '12px 16px' }}>
+                          <span style={{
+                            background: (p.stock ?? 0) < (p.stockCritico ?? 10) ? '#fee' : '#e8f5e9',
+                            color: (p.stock ?? 0) < (p.stockCritico ?? 10) ? '#d32f2f' : '#388e3c',
+                            padding: '4px 12px',
+                            borderRadius: 12,
+                            fontSize: 13,
+                            fontWeight: 500
+                          }}>
+                            {p.stock ?? "—"}
+                          </span>
+                        </td>
+                        <td style={{ padding: '12px 16px' }}>{p.categoria ?? p.categ ?? "—"}</td>
+                        <td style={{ padding: '12px 16px' }}>
+                          <button className="btn btn-sm btn-outline-primary me-2" onClick={() => openEditProd(i)}>✏️ Editar</button>
+                          <button className="btn btn-sm btn-outline-danger" onClick={() => deleteProd(i)}>🗑️ Eliminar</button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )}
+          </section>
+        ) : view === "pedidos" ? (
+          <section style={{
+            background: '#fff',
+            borderRadius: 12,
+            padding: 24,
+            boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
+          }}>
+            <h3 style={{ marginBottom: 20, color: '#2d3436', fontWeight: 600 }}>
+              📋 Pedidos ({orders.length})
+            </h3>
+            {orders.length === 0 ? (
+              <div style={{ padding: 40, textAlign: 'center' }}>
+                <div style={{ fontSize: 48, marginBottom: 12 }}>📋</div>
+                <p className="text-muted">No hay pedidos.</p>
+              </div>
+            ) : (
+              <div className="table-responsive">
+                <table className="table table-hover" style={{ marginBottom: 0 }}>
+                  <thead style={{ background: '#f8f9fa' }}>
+                    <tr>
+                      <th style={{ padding: '12px 16px', fontWeight: 600 }}>ID</th>
+                      <th style={{ padding: '12px 16px', fontWeight: 600 }}>Cliente</th>
+                      <th style={{ padding: '12px 16px', fontWeight: 600 }}>Fecha</th>
+                      <th style={{ padding: '12px 16px', fontWeight: 600 }}>Estado</th>
+                      <th style={{ padding: '12px 16px', fontWeight: 600 }}>Total</th>
+                      <th style={{ padding: '12px 16px', fontWeight: 600 }}>Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {orders.map((o, i) => {
+                      const statusColors = {
+                        PENDIENTE: { bg: '#fff3cd', color: '#856404' },
+                        CONFIRMADO: { bg: '#d1ecf1', color: '#0c5460' },
+                        ENVIADO: { bg: '#cce5ff', color: '#004085' },
+                        ENTREGADO: { bg: '#d4edda', color: '#155724' },
+                        CANCELADO: { bg: '#f8d7da', color: '#721c24' }
+                      };
+                      const statusStyle = statusColors[o.status] || statusColors.PENDIENTE;
+                      
+                      return (
+                        <tr key={o.id || i}>
+                          <td style={{ padding: '12px 16px', fontFamily: 'monospace' }}>{o.id}</td>
+                          <td style={{ padding: '12px 16px' }}>{o.cliente?.email || o.clienteEmail || 'N/D'}</td>
+                          <td style={{ padding: '12px 16px' }}>{o.fechaCreacion || o.createdAt || o.fecha}</td>
+                          <td style={{ padding: '12px 16px' }}>
+                            <span style={{
+                              background: statusStyle.bg,
+                              color: statusStyle.color,
+                              padding: '4px 12px',
+                              borderRadius: 12,
+                              fontSize: 13,
+                              fontWeight: 500
+                            }}>
+                              {o.status}
+                            </span>
+                          </td>
+                          <td style={{ padding: '12px 16px', fontWeight: 600, color: '#28a745' }}>
+                            {o.total != null ? Number(o.total).toLocaleString('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }) : '—'}
+                          </td>
+                          <td style={{ padding: '12px 16px' }}>
+                            <button className="btn btn-sm btn-outline-primary" onClick={() => openEditOrder(i)}>
+                              🔄 Cambiar estado
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
+        ) : view === "documentos" ? (
+          <section>
+            <div style={{
+              background: '#fff',
+              borderRadius: 12,
+              padding: 28,
+              boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+              marginBottom: 24
+            }}>
+              <h3 style={{ marginBottom: 8, color: '#2d3436', fontWeight: 600 }}>
+                📁 Documentos en S3
+              </h3>
+              <p className="text-muted" style={{ marginBottom: 24, fontSize: 15 }}>
+                Sube y gestiona archivos almacenados en Amazon S3
+              </p>
+            
+              {/* Zona de subida con Drag & Drop */}
+              <div
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                style={{
+                  border: `3px dashed ${dragOver ? '#28a745' : '#dee2e6'}`,
+                  borderRadius: 16,
+                  padding: 48,
+                  textAlign: 'center',
+                  marginBottom: 28,
+                  background: dragOver ? 'linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%)' : 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
+                  transition: 'all 0.3s ease',
+                  cursor: 'pointer'
+                }}
+                onClick={() => document.getElementById('fileInput').click()}
+              >
+                <input
+                  type="file"
+                  id="fileInput"
+                  style={{ display: 'none' }}
+                  onChange={(e) => handleFileSelect(e.target.files)}
+                  accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif,.webp,.zip,.rar,.txt,.csv"
+                />
+              
+                {uploadingFile ? (
+                  <div>
+                    <div className="spinner-border text-success mb-3" role="status" style={{ width: 48, height: 48 }}></div>
+                    <h5 style={{ fontWeight: 600, marginBottom: 16 }}>Subiendo archivo...</h5>
+                    <div className="progress" style={{ height: 12, maxWidth: 400, margin: '0 auto', borderRadius: 6 }}>
+                      <div 
+                        className="progress-bar bg-success progress-bar-striped progress-bar-animated" 
+                        style={{ width: `${uploadProgress}%` }}
+                      ></div>
+                    </div>
+                    <p className="text-muted mt-3" style={{ fontSize: 16, fontWeight: 500 }}>{uploadProgress}%</p>
+                  </div>
+                ) : (
+                  <>
+                    <div style={{ fontSize: 64, marginBottom: 20 }}>
+                      {dragOver ? '📥' : '☁️'}
+                    </div>
+                    <h5 style={{ fontWeight: 600, marginBottom: 12 }}>
+                      {dragOver ? '¡Suelta el archivo aquí!' : 'Arrastra y suelta archivos aquí'}
+                    </h5>
+                    <p className="text-muted mb-3" style={{ fontSize: 15 }}>
+                      o haz clic para seleccionar desde tu equipo
+                    </p>
+                    <div style={{
+                      display: 'inline-block',
+                      background: 'rgba(102, 126, 234, 0.1)',
+                      padding: '8px 16px',
+                      borderRadius: 8,
+                      marginTop: 8
+                    }}>
+                      <small className="text-muted" style={{ fontSize: 13, fontWeight: 500 }}>
+                        📄 PDF, DOC, XLS, Imágenes, ZIP (máx. 10MB)
+                      </small>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* Lista de documentos */}
+              <div style={{ 
+                background: 'linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%)', 
+                borderRadius: 12, 
+                boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
+                overflow: 'hidden'
+              }}>
+                <div style={{ 
+                  padding: '20px 24px', 
+                  borderBottom: '2px solid #e9ecef', 
+                  display: 'flex', 
+                  justifyContent: 'space-between', 
+                  alignItems: 'center',
+                  background: '#fff'
+                }}>
+                  <h5 style={{ margin: 0, fontWeight: 600, color: '#2d3436' }}>
+                    📂 Archivos subidos 
+                    <span style={{
+                      background: '#667eea',
+                      color: '#fff',
+                      padding: '4px 12px',
+                      borderRadius: 12,
+                      fontSize: 13,
+                      marginLeft: 12,
+                      fontWeight: 600
+                    }}>
+                      {documents.length}
+                    </span>
+                  </h5>
+                  <button 
+                    className="btn btn-sm btn-outline-success" 
+                    onClick={loadDocuments} 
+                    disabled={loadingDocs}
+                    style={{ fontWeight: 500 }}
+                  >
+                    {loadingDocs ? (
+                      <>
+                        <span className="spinner-border spinner-border-sm me-1" role="status"></span>
+                        Cargando...
+                      </>
+                    ) : (
+                      <>🔄 Refrescar</>
+                    )}
+                  </button>
+                </div>
+              
+                {loadingDocs ? (
+                  <div style={{ padding: 60, textAlign: 'center', background: '#fff' }}>
+                    <div className="spinner-border text-success mb-3" role="status" style={{ width: 48, height: 48 }}></div>
+                    <p className="mt-3 text-muted" style={{ fontSize: 15 }}>Cargando documentos...</p>
+                  </div>
+                ) : documents.length === 0 ? (
+                  <div style={{ padding: 60, textAlign: 'center', background: '#fff' }}>
+                    <div style={{ fontSize: 64, marginBottom: 16 }}>📂</div>
+                    <p className="text-muted" style={{ fontSize: 16 }}>No hay documentos subidos aún</p>
+                    <small className="text-muted">Arrastra un archivo o haz clic arriba para comenzar</small>
+                  </div>
+                ) : (
+                  <div style={{ maxHeight: 480, overflowY: 'auto', background: '#fff' }}>
+                    {documents.map((doc, idx) => {
+                      const nombre = doc.nombreArchivo || doc.nombre || 'Archivo';
+                      const tipo = tiposDocumento.find(t => t.value === doc.tipoDocumento);
+                      return (
+                        <div 
+                          key={doc.id || idx}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            padding: '16px 24px',
+                            borderBottom: idx < documents.length - 1 ? '1px solid #f0f0f0' : 'none',
+                            transition: 'background 0.2s',
+                            gap: 16
+                          }}
+                          onMouseOver={(e) => e.currentTarget.style.background = '#f8f9fa'}
+                          onMouseOut={(e) => e.currentTarget.style.background = '#fff'}
+                        >
+                          <span style={{ fontSize: 36, flexShrink: 0 }}>
+                            {getFileIcon(nombre)}
+                          </span>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ 
+                              fontWeight: 600, 
+                              color: '#2d3436', 
+                              overflow: 'hidden', 
+                              textOverflow: 'ellipsis', 
+                              whiteSpace: 'nowrap',
+                              fontSize: 15,
+                              marginBottom: 6
+                            }}>
+                              {nombre}
+                            </div>
+                            <div style={{ fontSize: 13, color: '#888', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                              {tipo && (
+                                <span style={{ 
+                                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                  color: '#fff',
+                                  padding: '3px 10px', 
+                                  borderRadius: 8,
+                                  fontSize: 11,
+                                  fontWeight: 600
+                                }}>
+                                  {tipo.label}
+                                </span>
+                              )}
+                              {doc.descripcion && (
+                                <span title={doc.descripcion} style={{ fontStyle: 'italic' }}>
+                                  {doc.descripcion.slice(0, 40)}{doc.descripcion.length > 40 ? '...' : ''}
+                                </span>
+                              )}
+                              {doc.fechaSubida && (
+                                <span style={{ 
+                                  background: '#e9ecef',
+                                  padding: '3px 8px',
+                                  borderRadius: 6,
+                                  fontSize: 11
+                                }}>
+                                  📅 {new Date(doc.fechaSubida).toLocaleDateString('es-CL')}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <div style={{ display: 'flex', gap: 10, flexShrink: 0 }}>
+                            {(doc.urlArchivo || doc.urlPublica) && (
+                              <button 
+                                className="btn btn-sm btn-outline-primary"
+                                onClick={() => handleDownloadDocument(doc)}
+                                title="Ver/Descargar"
+                                style={{ fontWeight: 500 }}
+                              >
+                                ⬇️ Descargar
+                              </button>
+                            )}
+                            <button 
+                              className="btn btn-sm btn-outline-danger"
+                              onClick={() => handleDeleteDocument(doc)}
+                              title="Eliminar"
+                              style={{ fontWeight: 500 }}
+                            >
+                              🗑️
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
           </section>
         ) : (
           <section>
             <h3>Pedidos ({orders.length})</h3>
-            {orders.length === 0 ? <p>No hay pedidos.</p> : (
-              <table className="table">
-                <thead><tr><th>ID</th><th>Cliente</th><th>Fecha</th><th>Estado</th><th>Total</th><th>Acciones</th></tr></thead>
-                <tbody>
-                  {orders.map((o, i) => (
-                    <tr key={o.id || i}>
-                      <td>{o.id}</td>
-                      <td>{o.cliente?.email || o.clienteEmail || 'N/D'}</td>
-                      <td>{o.fechaCreacion || o.createdAt || o.fecha}</td>
-                      <td>{o.status}</td>
-                      <td>{o.total != null ? Number(o.total).toLocaleString('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }) : '—'}</td>
-                      <td>
-                        <button className="btn btn-sm btn-outline-primary me-2" onClick={() => openEditOrder(i)}>Cambiar estado</button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
+            <p>Selecciona una vista del menú superior.</p>
           </section>
         )}
       </div>
@@ -610,6 +1227,183 @@ export default function Admin() {
             }}>
               <button type="button" className="btn btn-outline-secondary" onClick={() => setShowOrderModal(false)}>Cancelar</button>
               <button type="button" className="btn btn-success" onClick={saveOrderStatus}>Guardar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Upload Document Modal */}
+      {showUploadModal && (
+        <div
+          className="modal-backdrop"
+          style={{ 
+            position: 'fixed', 
+            inset: 0, 
+            background: 'rgba(0,0,0,0.5)', 
+            zIndex: 1100,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px'
+          }}
+          onClick={(e) => { if (e.target === e.currentTarget) setShowUploadModal(false); }}
+        >
+          <div
+            style={{
+              maxWidth: 500,
+              width: '100%',
+              background: '#fff',
+              borderRadius: 12,
+              boxShadow: '0 12px 40px rgba(0,0,0,0.3)',
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden'
+            }}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Subir documento"
+          >
+            <div style={{ 
+              padding: '16px 20px', 
+              borderBottom: '1px solid #e0e0e0', 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center',
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              color: '#fff'
+            }}>
+              <h5 style={{ margin: 0, fontSize: 18, fontWeight: 600 }}>📤 Subir Documento</h5>
+              <button 
+                className="btn btn-sm" 
+                style={{ background: 'rgba(255,255,255,0.2)', border: 'none', color: '#fff' }}
+                onClick={() => setShowUploadModal(false)}
+              >
+                ✕
+              </button>
+            </div>
+
+            <form
+              onSubmit={(e) => { e.preventDefault(); handleFileUpload(); }}
+              style={{ padding: '24px' }}
+            >
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                {/* File Preview */}
+                {selectedFile && (
+                  <div style={{
+                    background: '#f8f9fa',
+                    border: '2px solid #e0e0e0',
+                    borderRadius: 8,
+                    padding: 16,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 12
+                  }}>
+                    <span style={{ fontSize: 32 }}>
+                      {getFileIcon(selectedFile.name)}
+                    </span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ 
+                        fontWeight: 600, 
+                        color: '#2d3436',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap'
+                      }}>
+                        {selectedFile.name}
+                      </div>
+                      <div style={{ fontSize: 13, color: '#888' }}>
+                        {formatFileSize(selectedFile.size)}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Tipo de Documento */}
+                <div>
+                  <label className="form-label" style={{ fontWeight: 600, marginBottom: 8, display: 'block', color: '#2d3436' }}>
+                    Tipo de Documento *
+                  </label>
+                  <select 
+                    className="form-select" 
+                    value={tipoDocumento} 
+                    onChange={e => setTipoDocumento(e.target.value)}
+                    style={{ fontSize: 15 }}
+                  >
+                    {tiposDocumento.map(tipo => (
+                      <option key={tipo.value} value={tipo.value}>
+                        {tipo.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Descripción */}
+                <div>
+                  <label className="form-label" style={{ fontWeight: 600, marginBottom: 8, display: 'block', color: '#2d3436' }}>
+                    Descripción (opcional)
+                  </label>
+                  <textarea 
+                    className="form-control" 
+                    rows={3}
+                    value={descripcionDoc}
+                    onChange={e => setDescripcionDoc(e.target.value)}
+                    placeholder="Descripción breve del documento..."
+                    maxLength={200}
+                    style={{ fontSize: 14, resize: 'none' }}
+                  />
+                  <small className="text-muted" style={{ fontSize: 12 }}>
+                    {descripcionDoc.length}/200 caracteres
+                  </small>
+                </div>
+
+                {/* Progress bar when uploading */}
+                {uploadingFile && (
+                  <div>
+                    <div className="progress" style={{ height: 8, borderRadius: 4 }}>
+                      <div 
+                        className="progress-bar bg-success progress-bar-striped progress-bar-animated" 
+                        style={{ width: `${uploadProgress}%` }}
+                      ></div>
+                    </div>
+                    <p className="text-center text-muted mt-2" style={{ fontSize: 13, margin: '8px 0 0' }}>
+                      Subiendo... {uploadProgress}%
+                    </p>
+                  </div>
+                )}
+              </div>
+            </form>
+
+            <div style={{ 
+              padding: '16px 20px', 
+              borderTop: '1px solid #e0e0e0', 
+              display: 'flex', 
+              justifyContent: 'flex-end', 
+              gap: 12,
+              background: '#f8f9fa'
+            }}>
+              <button 
+                type="button" 
+                className="btn btn-outline-secondary" 
+                onClick={() => setShowUploadModal(false)}
+                disabled={uploadingFile}
+              >
+                Cancelar
+              </button>
+              <button 
+                type="button" 
+                className="btn btn-success" 
+                onClick={handleFileUpload}
+                disabled={uploadingFile || !selectedFile}
+              >
+                {uploadingFile ? (
+                  <>
+                    <span className="spinner-border spinner-border-sm me-2" role="status"></span>
+                    Subiendo...
+                  </>
+                ) : (
+                  <>📤 Subir</>
+                )}
+              </button>
             </div>
           </div>
         </div>

@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, Link } from 'react-router-dom';
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
-import productos from "../data/productos";
+import productosLocales from "../data/productos";
 import regionesYComunas from "../data/regiones_comunas";
 import api from '../api/client';
 
@@ -23,6 +23,28 @@ export default function Pedido() {
   const [errors, setErrors] = useState({});
   const [msg, setMsg] = useState("");
   const [loading, setLoading] = useState(false);
+  const [productos, setProductos] = useState([]);
+  const [loadingProducts, setLoadingProducts] = useState(true);
+
+  // Cargar productos del backend al montar el componente
+  useEffect(() => {
+    (async () => {
+      try {
+        const { data } = await api.get('/v1/products');
+        const normalized = data.map(p => ({
+          ...p,
+          img: p.imagen || p.img || '/data/placeholder.png',
+          precio: Number(p.precio) || 0,
+        }));
+        setProductos(normalized);
+      } catch (err) {
+        console.error('Error cargando productos, usando datos locales:', err);
+        setProductos(productosLocales);
+      } finally {
+        setLoadingProducts(false);
+      }
+    })();
+  }, []);
 
   useEffect(() => { window.scrollTo(0,0); }, []);
 
@@ -113,9 +135,21 @@ export default function Pedido() {
     }
   };
 
-  const cartItems = Object.entries(cart || {}).map(([codigo, qty]) => {
-    const prod = productos.find(p => p.codigo === codigo) || { nombre: codigo, precio: 0 };
-    return { ...prod, codigo, qty };
+  // Buscar producto por id (numérico del backend) o codigo (string local)
+  const findProduct = (key) => {
+    const numericId = Number(key);
+    // Buscar por id numérico
+    let prod = productos.find(p => p.id === numericId || p.id === key);
+    // Si no se encuentra, buscar por codigo string
+    if (!prod) {
+      prod = productos.find(p => p.codigo === key || p.codigo === String(key));
+    }
+    return prod || { nombre: `Producto ${key}`, precio: 0 };
+  };
+
+  const cartItems = Object.entries(cart || {}).map(([key, qty]) => {
+    const prod = findProduct(key);
+    return { ...prod, codigo: key, qty };
   });
   const subtotal = cartItems.reduce((sum, item) => sum + (item.precio * item.qty), 0);
   const formatCLP = (v) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(v);

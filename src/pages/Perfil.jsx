@@ -8,12 +8,16 @@ export default function Perfil() {
   const { user, logout, isAuthenticated } = useAuth();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [pedidos, setPedidos] = useState([]);
+  const [loadingPedidos, setLoadingPedidos] = useState(true);
+  const [expandedOrder, setExpandedOrder] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
     window.scrollTo(0, 0);
     
     if (isAuthenticated) {
+      // Cargar perfil
       (async () => {
         try {
           const { data } = await api.get('/v1/users/me');
@@ -24,8 +28,30 @@ export default function Perfil() {
           setLoading(false);
         }
       })();
+      
+      // Cargar pedidos del usuario
+      (async () => {
+        try {
+          const { data } = await api.get('/v1/orders/my-orders');
+          setPedidos(Array.isArray(data) ? data : []);
+        } catch (e) {
+          console.error('Error cargando pedidos', e);
+          // Si falla, intentar con /v1/orders y filtrar por usuario
+          try {
+            const { data } = await api.get('/v1/orders');
+            const myOrders = Array.isArray(data) ? data : [];
+            setPedidos(myOrders);
+          } catch (e2) {
+            console.error('Error cargando pedidos (fallback)', e2);
+            setPedidos([]);
+          }
+        } finally {
+          setLoadingPedidos(false);
+        }
+      })();
     } else {
       setLoading(false);
+      setLoadingPedidos(false);
     }
   }, [isAuthenticated]);
 
@@ -126,6 +152,55 @@ export default function Perfil() {
       borderRadius: 8,
       boxShadow: '0 4px 15px rgba(220, 53, 69, 0.3)',
       transition: 'transform 0.2s, box-shadow 0.2s'
+    },
+    orderCard: {
+      background: '#fff',
+      borderRadius: 12,
+      padding: 16,
+      marginBottom: 12,
+      boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+      cursor: 'pointer',
+      transition: 'all 0.2s',
+      border: '1px solid #eee'
+    },
+    orderHeader: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 8
+    },
+    orderId: {
+      fontWeight: 700,
+      color: '#28a745',
+      fontSize: 15
+    },
+    orderDate: {
+      fontSize: 13,
+      color: '#888'
+    },
+    orderStatus: {
+      display: 'inline-block',
+      padding: '4px 12px',
+      borderRadius: 20,
+      fontSize: 12,
+      fontWeight: 600
+    },
+    orderTotal: {
+      fontSize: 18,
+      fontWeight: 700,
+      color: '#2d3436'
+    },
+    orderDetails: {
+      marginTop: 12,
+      paddingTop: 12,
+      borderTop: '1px dashed #eee'
+    },
+    orderItem: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      padding: '6px 0',
+      fontSize: 14,
+      color: '#555'
     }
   };
 
@@ -256,6 +331,159 @@ export default function Perfil() {
                 🛍️ Mi Carrito
               </Link>
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Historial de Pedidos */}
+      <div style={{ marginTop: 30 }}>
+        <div style={styles.card}>
+          <div style={styles.cardHeader}>
+            <div style={{ ...styles.cardIcon, background: '#f3e5f5', color: '#9c27b0' }}>
+              📦
+            </div>
+            <h5 style={{ margin: 0, fontWeight: 600 }}>Historial de Pedidos</h5>
+            {pedidos.length > 0 && (
+              <span style={{ 
+                marginLeft: 'auto', 
+                background: '#28a745', 
+                color: '#fff', 
+                padding: '2px 10px', 
+                borderRadius: 12, 
+                fontSize: 13 
+              }}>
+                {pedidos.length} pedido{pedidos.length !== 1 ? 's' : ''}
+              </span>
+            )}
+          </div>
+          <div style={styles.cardBody}>
+            {loadingPedidos ? (
+              <div style={{ textAlign: 'center', padding: 20 }}>
+                <div className="spinner-border spinner-border-sm text-success" role="status"></div>
+                <p style={{ marginTop: 8, color: '#888', fontSize: 14 }}>Cargando pedidos...</p>
+              </div>
+            ) : pedidos.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: 30 }}>
+                <div style={{ fontSize: 48, marginBottom: 12 }}>🛒</div>
+                <p style={{ color: '#888', marginBottom: 16 }}>Aún no has realizado ningún pedido</p>
+                <Link to="/catalogo" className="btn btn-success btn-sm">
+                  Explorar Catálogo
+                </Link>
+              </div>
+            ) : (
+              <div style={{ maxHeight: 400, overflowY: 'auto' }}>
+                {pedidos.slice().reverse().map((pedido) => {
+                  const statusColors = {
+                    'PENDIENTE': { bg: '#fff3cd', color: '#856404' },
+                    'CONFIRMADO': { bg: '#cce5ff', color: '#004085' },
+                    'EN_PREPARACION': { bg: '#d4edda', color: '#155724' },
+                    'ENVIADO': { bg: '#d1ecf1', color: '#0c5460' },
+                    'ENTREGADO': { bg: '#d4edda', color: '#155724' },
+                    'CANCELADO': { bg: '#f8d7da', color: '#721c24' }
+                  };
+                  const statusLabels = {
+                    'PENDIENTE': '⏳ Pendiente',
+                    'CONFIRMADO': '✓ Confirmado',
+                    'EN_PREPARACION': '👨‍🍳 En Preparación',
+                    'ENVIADO': '🚚 Enviado',
+                    'ENTREGADO': '✅ Entregado',
+                    'CANCELADO': '❌ Cancelado'
+                  };
+                  const estado = pedido.estado || pedido.status || 'PENDIENTE';
+                  const statusStyle = statusColors[estado] || statusColors['PENDIENTE'];
+                  const isExpanded = expandedOrder === pedido.id;
+                  
+                  const formatCLP = (v) => new Intl.NumberFormat('es-CL', { 
+                    style: 'currency', currency: 'CLP', maximumFractionDigits: 0 
+                  }).format(v || 0);
+                  
+                  const formatDate = (dateStr) => {
+                    if (!dateStr) return '—';
+                    try {
+                      return new Date(dateStr).toLocaleDateString('es-CL', {
+                        day: '2-digit', month: 'short', year: 'numeric'
+                      });
+                    } catch { return dateStr; }
+                  };
+
+                  return (
+                    <div 
+                      key={pedido.id} 
+                      style={{
+                        ...styles.orderCard,
+                        borderLeft: `4px solid ${statusStyle.color}`,
+                        ...(isExpanded ? { boxShadow: '0 4px 15px rgba(0,0,0,0.1)' } : {})
+                      }}
+                      onClick={() => setExpandedOrder(isExpanded ? null : pedido.id)}
+                      onMouseOver={(e) => e.currentTarget.style.transform = 'translateX(4px)'}
+                      onMouseOut={(e) => e.currentTarget.style.transform = 'translateX(0)'}
+                    >
+                      <div style={styles.orderHeader}>
+                        <div>
+                          <span style={styles.orderId}>Pedido #{pedido.id}</span>
+                          <div style={styles.orderDate}>
+                            📅 {formatDate(pedido.fechaCreacion || pedido.createdAt || pedido.fecha)}
+                          </div>
+                        </div>
+                        <div style={{ textAlign: 'right' }}>
+                          <span style={{ 
+                            ...styles.orderStatus, 
+                            background: statusStyle.bg, 
+                            color: statusStyle.color 
+                          }}>
+                            {statusLabels[estado] || estado}
+                          </span>
+                          <div style={{ ...styles.orderTotal, marginTop: 4 }}>
+                            {formatCLP(pedido.total || pedido.totalAmount)}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Información de entrega */}
+                      <div style={{ fontSize: 13, color: '#666' }}>
+                        📍 {pedido.direccionEntrega || pedido.direccion || '—'}
+                        {pedido.comuna && `, ${pedido.comuna}`}
+                      </div>
+
+                      {/* Detalles expandibles */}
+                      {isExpanded && (
+                        <div style={styles.orderDetails}>
+                          <div style={{ fontWeight: 600, marginBottom: 8, color: '#333' }}>
+                            Productos:
+                          </div>
+                          {(pedido.items || pedido.productos || []).map((item, idx) => (
+                            <div key={idx} style={styles.orderItem}>
+                              <span>
+                                {item.nombre || item.productoNombre || item.producto?.nombre || `Producto ${item.productoId}`}
+                                {' '}
+                                <span style={{ color: '#999' }}>x{item.cantidad || item.qty || 1}</span>
+                              </span>
+                              <span style={{ fontWeight: 600 }}>
+                                {formatCLP((item.precioUnitario || item.precio || 0) * (item.cantidad || item.qty || 1))}
+                              </span>
+                            </div>
+                          ))}
+                          {pedido.comentarios && (
+                            <div style={{ marginTop: 10, padding: 10, background: '#f8f9fa', borderRadius: 8, fontSize: 13 }}>
+                              💬 <em>{pedido.comentarios}</em>
+                            </div>
+                          )}
+                          {pedido.fechaEntrega && (
+                            <div style={{ marginTop: 8, fontSize: 13, color: '#28a745' }}>
+                              🚚 Entrega programada: {formatDate(pedido.fechaEntrega)}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      
+                      <div style={{ textAlign: 'center', marginTop: 8, fontSize: 12, color: '#aaa' }}>
+                        {isExpanded ? '▲ Click para cerrar' : '▼ Click para ver detalles'}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
       </div>

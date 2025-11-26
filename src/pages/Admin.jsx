@@ -70,10 +70,17 @@ export default function Admin() {
   const loadProducts = async () => {
     try {
       const { data } = await api.get('/v1/products');
-      // Filtrar solo productos válidos (que tengan codigo o nombre de producto)
+      // Filtrar SOLO productos válidos (deben tener codigo, nombre Y precio, y NO deben tener email/run)
       const filteredProducts = (Array.isArray(data) ? data : []).filter(item => 
-        item && (item.codigo || item.precio !== undefined) && !item.email
+        item && 
+        item.codigo && 
+        item.nombre && 
+        item.precio !== undefined && 
+        !item.email && 
+        !item.run &&
+        !item.apellidos // Asegurar que no sean usuarios
       );
+      console.log('Productos filtrados:', filteredProducts.length);
       setProducts(filteredProducts);
     } catch (err) {
       console.error('Error cargando productos', err);

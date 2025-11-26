@@ -387,129 +387,211 @@ export default function Admin() {
   const onOrderChange = (k, v) => setOrderForm(prev => ({ ...prev, [k]: v }));
 
   return (
-    <main className="container" style={{ paddingTop: 24, paddingBottom: 40 }}>
-      {/* Header Section */}
-      <div style={{
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        borderRadius: 16,
-        padding: '32px 28px',
-        marginBottom: 32,
-        boxShadow: '0 4px 16px rgba(102, 126, 234, 0.3)'
-      }}>
-        <h2 style={{ 
-          color: '#fff', 
-          margin: 0, 
-          fontSize: 28,
-          fontWeight: 700,
-          textShadow: '0 2px 4px rgba(0,0,0,0.1)'
-        }}>
-          🎛️ Panel de Administración
-        </h2>
-        <p style={{ color: 'rgba(255,255,255,0.9)', margin: '8px 0 0', fontSize: 15 }}>
-          Gestiona productos, usuarios, pedidos y documentos
-        </p>
-      </div>
+    <main className="container-fluid" style={{ paddingTop: 24, paddingBottom: 40 }}>
+      <div className="row g-4">
+        {/* Sidebar de Navegación - Vertical */}
+        <div className="col-12 col-lg-3">
+          {/* Header Section */}
+          <div style={{
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            borderRadius: 16,
+            padding: '24px 20px',
+            marginBottom: 24,
+            boxShadow: '0 4px 16px rgba(102, 126, 234, 0.3)'
+          }}>
+            <h2 style={{ 
+              color: '#fff', 
+              margin: 0, 
+              fontSize: 24,
+              fontWeight: 700,
+              textShadow: '0 2px 4px rgba(0,0,0,0.1)',
+              textAlign: 'center'
+            }}>
+              🎛️ Panel Admin
+            </h2>
+          </div>
 
-      {/* Navigation Tabs */}
-      <div style={{ marginBottom: 28 }}>
-        <div className="row g-3">
-          {/* Productos Section */}
-          <div className="col-12 col-md-6 col-lg-3">
+          {/* Navigation Menu - Vertical */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {/* Productos Section */}
             <div style={{
               background: '#fff',
               borderRadius: 12,
-              padding: 16,
-              boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+              padding: 20,
+              boxShadow: view === "productos" ? '0 4px 16px rgba(13, 110, 253, 0.3)' : '0 2px 8px rgba(0,0,0,0.08)',
               border: view === "productos" ? '2px solid #0d6efd' : '2px solid transparent',
-              transition: 'all 0.2s'
+              transition: 'all 0.3s ease',
+              transform: view === "productos" ? 'translateX(8px)' : 'translateX(0)'
             }}>
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: 12, 
+                marginBottom: 16,
+                paddingBottom: 12,
+                borderBottom: '2px solid #f0f0f0'
+              }}>
+                <span style={{ fontSize: 28 }}>📦</span>
+                <h5 style={{ margin: 0, fontWeight: 700, color: '#2d3436', flex: 1 }}>Productos</h5>
+                <span style={{
+                  background: view === "productos" ? '#0d6efd' : '#e9ecef',
+                  color: view === "productos" ? '#fff' : '#6c757d',
+                  padding: '4px 12px',
+                  borderRadius: 20,
+                  fontSize: 13,
+                  fontWeight: 600
+                }}>
+                  {products.length}
+                </span>
+              </div>
               <button 
                 className={`btn w-100 mb-2 ${view === "productos" ? "btn-primary" : "btn-outline-primary"}`}
                 onClick={() => setView("productos")}
-                style={{ fontWeight: 600 }}
+                style={{ fontWeight: 600, fontSize: 15 }}
               >
-                📦 Productos
+                Ver Productos
               </button>
               <button 
-                className="btn btn-success btn-sm w-100" 
+                className="btn btn-success w-100" 
                 onClick={openNewProd}
-                style={{ fontSize: 13 }}
+                style={{ fontSize: 14, fontWeight: 600 }}
               >
                 ＋ Nuevo Producto
               </button>
             </div>
-          </div>
 
-          {/* Usuarios Section */}
-          <div className="col-12 col-md-6 col-lg-3">
+            {/* Usuarios Section */}
             <div style={{
               background: '#fff',
               borderRadius: 12,
-              padding: 16,
-              boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+              padding: 20,
+              boxShadow: view === "usuarios" ? '0 4px 16px rgba(108, 117, 125, 0.3)' : '0 2px 8px rgba(0,0,0,0.08)',
               border: view === "usuarios" ? '2px solid #6c757d' : '2px solid transparent',
-              transition: 'all 0.2s'
+              transition: 'all 0.3s ease',
+              transform: view === "usuarios" ? 'translateX(8px)' : 'translateX(0)'
             }}>
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: 12, 
+                marginBottom: 16,
+                paddingBottom: 12,
+                borderBottom: '2px solid #f0f0f0'
+              }}>
+                <span style={{ fontSize: 28 }}>👥</span>
+                <h5 style={{ margin: 0, fontWeight: 700, color: '#2d3436', flex: 1 }}>Usuarios</h5>
+                <span style={{
+                  background: view === "usuarios" ? '#6c757d' : '#e9ecef',
+                  color: view === "usuarios" ? '#fff' : '#6c757d',
+                  padding: '4px 12px',
+                  borderRadius: 20,
+                  fontSize: 13,
+                  fontWeight: 600
+                }}>
+                  {users.length}
+                </span>
+              </div>
               <button 
                 className={`btn w-100 mb-2 ${view === "usuarios" ? "btn-secondary" : "btn-outline-secondary"}`}
                 onClick={() => setView("usuarios")}
-                style={{ fontWeight: 600 }}
+                style={{ fontWeight: 600, fontSize: 15 }}
               >
-                👥 Usuarios
+                Ver Usuarios
               </button>
               <button 
-                className="btn btn-info btn-sm w-100" 
+                className="btn btn-info w-100" 
                 onClick={openNewUser}
-                style={{ fontSize: 13 }}
+                style={{ fontSize: 14, fontWeight: 600 }}
               >
                 ＋ Nuevo Usuario
               </button>
             </div>
-          </div>
 
-          {/* Pedidos Section */}
-          <div className="col-12 col-md-6 col-lg-3">
+            {/* Pedidos Section */}
             <div style={{
               background: '#fff',
               borderRadius: 12,
-              padding: 16,
-              boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+              padding: 20,
+              boxShadow: view === "pedidos" ? '0 4px 16px rgba(255, 193, 7, 0.3)' : '0 2px 8px rgba(0,0,0,0.08)',
               border: view === "pedidos" ? '2px solid #ffc107' : '2px solid transparent',
-              transition: 'all 0.2s'
+              transition: 'all 0.3s ease',
+              transform: view === "pedidos" ? 'translateX(8px)' : 'translateX(0)'
             }}>
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: 12, 
+                marginBottom: 16,
+                paddingBottom: 12,
+                borderBottom: '2px solid #f0f0f0'
+              }}>
+                <span style={{ fontSize: 28 }}>📋</span>
+                <h5 style={{ margin: 0, fontWeight: 700, color: '#2d3436', flex: 1 }}>Pedidos</h5>
+                <span style={{
+                  background: view === "pedidos" ? '#ffc107' : '#e9ecef',
+                  color: view === "pedidos" ? '#000' : '#6c757d',
+                  padding: '4px 12px',
+                  borderRadius: 20,
+                  fontSize: 13,
+                  fontWeight: 600
+                }}>
+                  {orders.length}
+                </span>
+              </div>
               <button 
                 className={`btn w-100 ${view === "pedidos" ? "btn-warning" : "btn-outline-warning"}`}
                 onClick={() => setView("pedidos")}
-                style={{ fontWeight: 600 }}
+                style={{ fontWeight: 600, fontSize: 15 }}
               >
-                📋 Pedidos
+                Ver Pedidos
               </button>
             </div>
-          </div>
 
-          {/* Documentos Section */}
-          <div className="col-12 col-md-6 col-lg-3">
+            {/* Documentos Section */}
             <div style={{
               background: '#fff',
               borderRadius: 12,
-              padding: 16,
-              boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+              padding: 20,
+              boxShadow: view === "documentos" ? '0 4px 16px rgba(33, 37, 41, 0.3)' : '0 2px 8px rgba(0,0,0,0.08)',
               border: view === "documentos" ? '2px solid #212529' : '2px solid transparent',
-              transition: 'all 0.2s'
+              transition: 'all 0.3s ease',
+              transform: view === "documentos" ? 'translateX(8px)' : 'translateX(0)'
             }}>
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: 12, 
+                marginBottom: 16,
+                paddingBottom: 12,
+                borderBottom: '2px solid #f0f0f0'
+              }}>
+                <span style={{ fontSize: 28 }}>📁</span>
+                <h5 style={{ margin: 0, fontWeight: 700, color: '#2d3436', flex: 1 }}>Documentos</h5>
+                <span style={{
+                  background: view === "documentos" ? '#212529' : '#e9ecef',
+                  color: view === "documentos" ? '#fff' : '#6c757d',
+                  padding: '4px 12px',
+                  borderRadius: 20,
+                  fontSize: 13,
+                  fontWeight: 600
+                }}>
+                  {documents.length}
+                </span>
+              </div>
               <button 
                 className={`btn w-100 ${view === "documentos" ? "btn-dark" : "btn-outline-dark"}`}
                 onClick={() => setView("documentos")}
-                style={{ fontWeight: 600 }}
+                style={{ fontWeight: 600, fontSize: 15 }}
               >
-                📁 Documentos S3
+                Gestionar S3
               </button>
             </div>
           </div>
         </div>
-      </div>
 
-      <div id="adminContent">
+        {/* Content Area */}
+        <div className="col-12 col-lg-9">
+          <div id="adminContent">
         {view === "usuarios" ? (
           <section style={{
             background: '#fff',
@@ -1423,6 +1505,8 @@ export default function Admin() {
           </div>
         </div>
       )}
+      </div>
+      </div>
     </main>
   );
 }

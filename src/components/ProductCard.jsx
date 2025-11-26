@@ -1,8 +1,20 @@
 import React from "react";
 import { toast } from 'react-toastify';
+import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 export default function ProductCard({ producto, onAdd }) {
+  const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+
   const addToCart = () => {
+    // 🔒 VALIDAR AUTENTICACIÓN ANTES DE AGREGAR
+    if (!isAuthenticated) {
+      toast.warning('⚠️ Debes iniciar sesión para agregar productos al carrito');
+      setTimeout(() => navigate('/login'), 1500);
+      return;
+    }
+
     try {
       const itemToAdd = {
         codigo: producto.codigo,

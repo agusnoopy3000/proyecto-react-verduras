@@ -3,6 +3,7 @@ import { Routes, Route } from "react-router-dom";
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { CartProvider } from "./context/CartContext";
+import ProtectedRoute from "./components/ProtectedRoute";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 import Home from "./pages/Home";
@@ -31,20 +32,24 @@ export default function App() {
         <Route path="/" element={<Home />} />
         <Route path="/catalogo" element={<Catalogo />} />
         <Route path="/catalog" element={<Catalog />} />
-        <Route path="/carrito" element={<Carrito />} />
-        <Route path="/pedido" element={<Pedido />} />
-        <Route path="/confirmacion" element={<Confirmacion />} />
+        
+        {/* 🔒 Rutas protegidas - Requieren autenticación */}
+        <Route path="/carrito" element={<ProtectedRoute><Carrito /></ProtectedRoute>} />
+        <Route path="/pedido" element={<ProtectedRoute><Pedido /></ProtectedRoute>} />
+        <Route path="/confirmacion" element={<ProtectedRoute><Confirmacion /></ProtectedRoute>} />
+        <Route path="/perfil" element={<ProtectedRoute><Perfil /></ProtectedRoute>} />
+        <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
+        <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
+        <Route path="/exito" element={<ProtectedRoute><Success /></ProtectedRoute>} />
+        <Route path="/error-pago" element={<ProtectedRoute><ErrorPayment /></ProtectedRoute>} />
+        
+        {/* Rutas públicas */}
         <Route path="/registro" element={<Registro />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/perfil" element={<Perfil />} />
-        <Route path="/admin" element={<Admin />} />
         <Route path="/contacto" element={<Contacto />} />
         <Route path="/nosotros" element={<Nosotros />} />
         <Route path="/blog" element={<Blog />} />
         <Route path="/ofertas" element={<Offers />} />
-        <Route path="/checkout" element={<Checkout />} />
-        <Route path="/exito" element={<Success />} />
-        <Route path="/error-pago" element={<ErrorPayment />} />
       </Routes>
       <ToastContainer position="top-right" autoClose={3000} />
       <Footer />
